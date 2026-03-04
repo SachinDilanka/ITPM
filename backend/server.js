@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './src/config/db.js';
-import inventoryRoutes from './src/routes/inventoryRoutes.js';
+import commentRoutes from './src/routes/commentRoute.js';
 import { errorHandler, notFound } from './src/middleware/errorMiddleware.js';
 
 // Load env vars
@@ -19,7 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/inventory', inventoryRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Base route for testing
 app.get('/', (req, res) => {
