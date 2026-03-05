@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './src/config/db.js';
 import commentRoutes from './src/routes/commentRoute.js';
+import ratingRoutes from './src/routes/ratingRoute.js';
 import { errorHandler, notFound } from './src/middleware/errorMiddleware.js';
 
 // Load env vars
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/comments', commentRoutes);
+app.use('/api/ratings', ratingRoutes);
 
 // Base route for testing
 app.get('/', (req, res) => {

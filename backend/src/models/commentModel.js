@@ -24,6 +24,11 @@ const commentSchema = new mongoose.Schema(
             minlength: [1, 'Comment must be at least 1 character'],
             maxlength: [1000, 'Comment cannot exceed 1000 characters']
         },
+        originalComment: {
+            type: String,
+            trim: true,
+            default: null
+        },
         pdfTitle: {
             type: String,
             trim: true
