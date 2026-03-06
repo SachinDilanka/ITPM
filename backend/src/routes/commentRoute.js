@@ -13,11 +13,12 @@ import {
     validateCommentUpdate,
     validateMongoId
 } from '../middleware/ValidatorMiddleware.js';
+import { checkInappropriateContent } from '../middleware/contentFilterMiddleware.js';
 
 const router = express.Router();
 
-// Create a new comment
-router.post('/', validateCommentCreate, createComment);
+// Create a new comment - Gemini content filter check
+router.post('/', validateCommentCreate, checkInappropriateContent, createComment);
 
 // Get all comments
 router.get('/', getAllComments);
@@ -31,8 +32,8 @@ router.get('/user/:userId', getCommentsByUserId);
 // Get a single comment by ID
 router.get('/:id', validateMongoId, getCommentById);
 
-// Update a comment by ID
-router.put('/:id', validateMongoId, validateCommentUpdate, updateComment);
+// Update a comment by ID - Gemini content filter check
+router.put('/:id', validateMongoId, validateCommentUpdate, checkInappropriateContent, updateComment);
 
 // Delete a comment by ID
 router.delete('/:id', validateMongoId, deleteComment);

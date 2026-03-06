@@ -5,13 +5,14 @@ import Comment from '../models/commentModel.js';
 // @access  Public
 export const createComment = async (req, res) => {
     try {
-        const { pdfId, userId, userName, comment, pdfTitle } = req.body;
+        const { pdfId, userId, userName, comment, pdfTitle, originalComment } = req.body;
 
         const newComment = await Comment.create({
             pdfId,
             userId,
             userName,
-            comment,
+            comment,           // Translated English comment
+            originalComment: originalComment || null,  // Original language comment
             pdfTitle
         });
 

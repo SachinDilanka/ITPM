@@ -63,6 +63,60 @@ export const validateCommentUpdate = (req, res, next) => {
     next();
 };
 
+export const validateRatingCreate = (req, res, next) => {
+    const { pdfId, userId, userName, rating } = req.body;
+    const errors = [];
+
+    if (!pdfId || pdfId.trim() === '') {
+        errors.push('PDF ID is required');
+    }
+
+    if (!userId || userId.trim() === '') {
+        errors.push('User ID is required');
+    }
+
+    if (!userName || userName.trim() === '') {
+        errors.push('Username is required');
+    }
+
+    if (!rating) {
+        errors.push('Rating is required');
+    } else if (!Number.isInteger(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) {
+        errors.push('Rating must be a whole number between 1 and 5');
+    }
+
+    if (errors.length > 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Validation failed',
+            errors: errors
+        });
+    }
+
+    next();
+};
+
+export const validateRatingUpdate = (req, res, next) => {
+    const { rating } = req.body;
+    const errors = [];
+
+    if (!rating) {
+        errors.push('Rating is required');
+    } else if (!Number.isInteger(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) {
+        errors.push('Rating must be a whole number between 1 and 5');
+    }
+
+    if (errors.length > 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Validation failed',
+            errors: errors
+        });
+    }
+
+    next();
+};
+
 export const validateMongoId = (req, res, next) => {
     const { id } = req.params;
 
