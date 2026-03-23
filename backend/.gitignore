@@ -24,3 +24,6 @@ coverage/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Uploaded files (avatars)
+uploads/
