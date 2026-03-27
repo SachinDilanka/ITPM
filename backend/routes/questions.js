@@ -14,6 +14,7 @@ router.get('/', async function(req, res) {
     const tags = req.query.tags;
     const subject = req.query.subject;
     const semester = req.query.semester;
+    const academicYear = req.query.academicYear;
     
     let query = {};
     
@@ -32,6 +33,10 @@ router.get('/', async function(req, res) {
     
     if (semester) {
       query.semester = parseInt(semester);
+    }
+    
+    if (academicYear) {
+      query.academicYear = academicYear;
     }
 
     const questions = await Question.find(query)

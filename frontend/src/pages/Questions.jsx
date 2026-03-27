@@ -149,7 +149,7 @@ const Questions = () => {
       return timestamp;
     }
   };
-  const subjects = ['Mathematics', 'Physics', 'Chemistry', 'Computer Science', 'Biology', 'English'];
+  const subjects = ['Introduction to Programming', 'Network Design and Management', 'Database Systems', 'Programming Applications and Frameworks'];
   const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
   const semesters = ['1st Semester', '2nd Semester'];
 
@@ -1469,23 +1469,32 @@ const Questions = () => {
                     background: 'linear-gradient(45deg, #9333ea, #ec4899)',
                     color: '#fff',
                     borderColor: '#9333ea',
-                    transform: 'scale(1.05)',
-                    boxShadow: '0 4px 15px rgba(147, 51, 234, 0.4)',
                     '&:before': {
                       left: 0
+                    },
+                    '&:after': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
+                      transform: 'translateX(0%)',
+                      transition: 'transform 0.6s ease',
+                      zIndex: 1
                     }
                   },
                   '&:hover': {
                     borderColor: '#9333ea',
                     background: 'rgba(147, 51, 234, 0.1)',
-                    transform: 'scale(1.02)',
                     '&:before': {
                       left: 0
                     }
                   }
                 }}
               >
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
+                <Box sx={{ position: 'relative', zIndex: 2 }}>
                   {year}
                 </Box>
               </ToggleButton>
@@ -1666,12 +1675,10 @@ const Questions = () => {
                     }
                     
                     const subjectIcons = {
-                      'Mathematics': '∑',
-                      'Physics': '⚛',
-                      'Chemistry': '🧪',
-                      'Computer Science': '💻',
-                      'Biology': '🧬',
-                      'English': '📚'
+                      'Introduction to Programming': '💻',
+                      'Network Design and Management': '🌐',
+                      'Database Systems': '🗄️',
+                      'Programming Applications and Frameworks': '⚙️'
                     };
                     
                     return (
@@ -1696,12 +1703,10 @@ const Questions = () => {
                   </MenuItem>
                   {subjects.map((subject) => {
                     const subjectIcons = {
-                      'Mathematics': '∑',
-                      'Physics': '⚛',
-                      'Chemistry': '🧪',
-                      'Computer Science': '💻',
-                      'Biology': '🧬',
-                      'English': '📚'
+                      'Introduction to Programming': '💻',
+                      'Network Design and Management': '🌐',
+                      'Database Systems': '🗄️',
+                      'Programming Applications and Frameworks': '⚙️'
                     };
                     
                     return (
@@ -1793,12 +1798,10 @@ const Questions = () => {
                 background: 'linear-gradient(135deg, #9333ea 0%, #ec4899 100%)',
                 borderRadius: '12px'
               }}>
-                {filterSubject === 'Mathematics' && '∑'}
-                {filterSubject === 'Physics' && '⚛'}
-                {filterSubject === 'Chemistry' && '🧪'}
-                {filterSubject === 'Computer Science' && '💻'}
-                {filterSubject === 'Biology' && '🧬'}
-                {filterSubject === 'English' && '📚'}
+                {filterSubject === 'Introduction to Programming' && '💻'}
+                {filterSubject === 'Network Design and Management' && '🌐'}
+                {filterSubject === 'Database Systems' && '🗄️'}
+                {filterSubject === 'Programming Applications and Frameworks' && '⚙️'}
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography sx={{ 
@@ -2549,6 +2552,7 @@ const Questions = () => {
                       key={year}
                       value={year}
                       required
+                      onClick={() => setFormData({ ...formData, year: year })}
                       sx={{
                         px: 3,
                         py: 1,
@@ -2684,12 +2688,10 @@ const Questions = () => {
                           }}
                           renderValue={(selected) => {
                             const subjectIcons = {
-                              'Mathematics': '∑',
-                              'Physics': '⚛',
-                              'Chemistry': '🧪',
-                              'Computer Science': '💻',
-                              'Biology': '🧬',
-                              'English': '📚'
+                              'Introduction to Programming': '💻',
+                              'Network Design and Management': '🌐',
+                              'Database Systems': '🗄️',
+                              'Programming Applications and Frameworks': '⚙️'
                             };
                             
                             return (
@@ -2718,12 +2720,10 @@ const Questions = () => {
                           </MenuItem>
                           {subjects.map((subject) => {
                             const subjectIcons = {
-                              'Mathematics': '∑',
-                              'Physics': '⚛',
-                              'Chemistry': '🧪',
-                              'Computer Science': '💻',
-                              'Biology': '🧬',
-                              'English': '📚'
+                              'Introduction to Programming': '💻',
+                              'Network Design and Management': '🌐',
+                              'Database Systems': '🗄️',
+                              'Programming Applications and Frameworks': '⚙️'
                             };
                             
                             return (
@@ -2774,12 +2774,10 @@ const Questions = () => {
                                       color: 'rgba(255, 255, 255, 0.6)',
                                       fontSize: '12px'
                                     }}>
-                                      {subject === 'Mathematics' && 'Numbers, equations, and problem solving'}
-                                      {subject === 'Physics' && 'Forces, motion, and natural laws'}
-                                      {subject === 'Chemistry' && 'Elements, compounds, and reactions'}
-                                      {subject === 'Computer Science' && 'Programming, algorithms, and software'}
-                                      {subject === 'Biology' && 'Living organisms and life processes'}
-                                      {subject === 'English' && 'Language, literature, and writing'}
+                                      {subject === 'Introduction to Programming' && 'Programming fundamentals, algorithms, and problem solving'}
+                                      {subject === 'Network Design and Management' && 'Network architecture, protocols, and administration'}
+                                      {subject === 'Database Systems' && 'Database design, SQL, and data management'}
+                                      {subject === 'Programming Applications and Frameworks' && 'Software development, frameworks, and applications'}
                                     </Typography>
                                   </Box>
                                   {formData.subject === subject && (
@@ -2826,12 +2824,10 @@ const Questions = () => {
                             background: 'linear-gradient(135deg, #9333ea 0%, #ec4899 100%)',
                             borderRadius: '12px'
                           }}>
-                            {formData.subject === 'Mathematics' && '∑'}
-                            {formData.subject === 'Physics' && '⚛'}
-                            {formData.subject === 'Chemistry' && '🧪'}
-                            {formData.subject === 'Computer Science' && '💻'}
-                            {formData.subject === 'Biology' && '🧬'}
-                            {formData.subject === 'English' && '📚'}
+                            {formData.subject === 'Introduction to Programming' && '💻'}
+                            {formData.subject === 'Network Design and Management' && '🌐'}
+                            {formData.subject === 'Database Systems' && '🗄️'}
+                            {formData.subject === 'Programming Applications and Frameworks' && '⚙️'}
                           </Box>
                           <Box sx={{ flex: 1 }}>
                             <Typography sx={{ 

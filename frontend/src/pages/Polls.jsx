@@ -308,9 +308,9 @@ export const Polls = () => {
     }
   };
 
-  const deactivatePollApi = async (pollId) => {
+  const endPollApi = async (pollId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/polls/${pollId}/deactivate`, {
+      const response = await fetch(`http://localhost:5000/api/polls/${pollId}/end`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -328,7 +328,8 @@ export const Polls = () => {
             if (poll._id === pollId) {
               return {
                 ...updatedPoll,
-                isActive: false, // Explicitly set isActive to false
+                isActive: false, // Set by backend
+                isEnded: true,  // Set by backend
                 options: (updatedPoll.options || []).map((option, index) => ({
                   ...option,
                   votes: Array.isArray(option.votes) ? option.votes.length : (option.votes || 0),
@@ -347,11 +348,11 @@ export const Polls = () => {
         return true;
       } else {
         const errorData = await response.json();
-        console.error('Deactivate poll failed:', errorData);
+        console.error('End poll failed:', errorData);
         return false;
       }
     } catch (error) {
-      console.error('Error deactivating poll:', error);
+      console.error('Error ending poll:', error);
       return false;
     }
   };
@@ -840,7 +841,7 @@ export const Polls = () => {
       if (pollToDelete.action === 'delete') {
         success = await deletePollApi(pollToDelete._id);
       } else if (pollToDelete.action === 'deactivate') {
-        success = await deactivatePollApi(pollToDelete._id);
+        success = await endPollApi(pollToDelete._id);
       }
       
       if (success) {

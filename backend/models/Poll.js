@@ -47,6 +47,10 @@ const pollSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isEnded: {
+    type: Boolean,
+    default: false
+  },
   isDeleted: {
     type: Boolean,
     default: false
@@ -59,5 +63,6 @@ pollSchema.index({ subject: 1 });
 pollSchema.index({ year: 1 });
 pollSchema.index({ semester: 1 });
 pollSchema.index({ createdAt: -1 });
+pollSchema.index({ isEnded: 1 });
 
 module.exports = mongoose.model('Poll', pollSchema);

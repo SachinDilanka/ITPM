@@ -200,6 +200,50 @@ router.patch('/:id/deactivate', async function(req, res) {
   }
 });
 
+// End poll (set isEnded to true)
+router.patch('/:id/end', async function(req, res) {
+  try {
+    const poll = await Poll.findById(req.params.id);
+
+    if (!poll) {
+      return res.status(404).json({ message: 'Poll not found' });
+    }
+
+    // Get user ID from request body (for demo purposes)
+    // In production, this should come from authentication middleware
+    const userId = req.body.userId;
+    
+    // Check if user is the author of the poll
+    if (!userId || poll.author.toString() !== userId) {
+      return res.status(403).json({ message: 'You can only end your own polls' });
+    }
+
+    poll.isEnded = true;
+    poll.isActive = false; // Also set isActive to false for consistency
+    await poll.save();
+
+    // Return updated poll with percentages
+    const totalVotes = poll.options.reduce(function(sum, option) {
+      return sum + option.votes.length;
+    }, 0);
+    
+    const updatedPoll = {
+      ...poll.toObject(),
+      options: poll.options.map(function(option) {
+        return {
+          ...option.toObject(),
+          percentage: totalVotes > 0 ? Math.round((option.votes.length / totalVotes) * 100) : 0
+        };
+      }),
+      totalVotes: totalVotes
+    };
+
+    res.json(updatedPoll);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Delete poll (soft delete)
 router.delete('/:id', async function(req, res) {
   try {

@@ -27,15 +27,18 @@ const getAICorrection = async (question, options, subject, description = '') => 
     const descLower = description.toLowerCase();
     const fullText = (question + ' ' + description).toLowerCase();
     
-    if (subject.toLowerCase().includes('math') || fullText.includes('calculate') || fullText.includes('solve') || fullText.includes('equation')) {
-      analysis.reasoning = 'This appears to be a mathematical problem requiring step-by-step calculation.';
-      analysis.explanation = 'The AI suggests breaking down the problem into smaller steps and applying relevant mathematical formulas. Consider showing your work and verifying each step.';
-    } else if (subject.toLowerCase().includes('science') || fullText.includes('experiment') || fullText.includes('theory') || fullText.includes('hypothesis')) {
-      analysis.reasoning = 'This is a science-related question that may require understanding of scientific principles.';
-      analysis.explanation = 'The AI recommends reviewing relevant scientific concepts, considering experimental methods, and applying logical reasoning based on scientific principles.';
-    } else if (subject.toLowerCase().includes('computer') || fullText.includes('code') || fullText.includes('algorithm') || fullText.includes('programming')) {
-      analysis.reasoning = 'This appears to be a computer science or programming question.';
-      analysis.explanation = 'The AI suggests considering algorithmic efficiency, code structure, and best practices. Think about edge cases and test your solution thoroughly.';
+    if (subject.toLowerCase().includes('programming') || subject.toLowerCase().includes('introduction') || fullText.includes('code') || fullText.includes('algorithm') || fullText.includes('programming')) {
+      analysis.reasoning = 'This appears to be a programming-related question requiring algorithmic thinking.';
+      analysis.explanation = 'The AI suggests considering the problem requirements, choosing appropriate data structures, and implementing efficient algorithms. Think about edge cases and test your solution thoroughly.';
+    } else if (subject.toLowerCase().includes('network') || subject.toLowerCase().includes('management') || fullText.includes('network') || fullText.includes('protocol')) {
+      analysis.reasoning = 'This is a network-related question that may require understanding of network concepts.';
+      analysis.explanation = 'The AI recommends reviewing network protocols, topology concepts, and considering security aspects. Think about scalability and performance requirements.';
+    } else if (subject.toLowerCase().includes('database') || fullText.includes('sql') || fullText.includes('database') || fullText.includes('query')) {
+      analysis.reasoning = 'This is a database-related question that may require SQL knowledge and design principles.';
+      analysis.explanation = 'The AI suggests considering database normalization, proper indexing, and efficient query design. Think about data integrity and performance optimization.';
+    } else if (subject.toLowerCase().includes('applications') || subject.toLowerCase().includes('frameworks') || fullText.includes('framework') || fullText.includes('application')) {
+      analysis.reasoning = 'This appears to be an application development question.';
+      analysis.explanation = 'The AI recommends considering framework selection, architecture patterns, and best practices. Think about maintainability, scalability, and user experience.';
     } else {
       analysis.reasoning = 'This is an open-ended question that requires critical thinking and analysis.';
       analysis.explanation = 'The AI recommends carefully reading the question, identifying key concepts, and providing a well-structured answer with relevant examples and evidence.';
@@ -46,46 +49,58 @@ const getAICorrection = async (question, options, subject, description = '') => 
 
   // Original logic for multiple choice questions
   // Simple heuristic-based AI simulation for different subjects
-  if (subject.toLowerCase().includes('math') || question.toLowerCase().includes('calculate') || question.toLowerCase().includes('solve')) {
-    // For math questions, typically the most complex answer is correct
-    const mathKeywords = ['equation', 'formula', 'calculate', 'solve', 'compute'];
-    const hasMathKeywords = mathKeywords.some(keyword => question.toLowerCase().includes(keyword));
+  if (subject.toLowerCase().includes('programming') || subject.toLowerCase().includes('introduction') || question.toLowerCase().includes('calculate') || question.toLowerCase().includes('solve') || question.toLowerCase().includes('code')) {
+    // For programming questions, look for programming concepts
+    const programmingKeywords = ['algorithm', 'function', 'variable', 'loop', 'array', 'object', 'class', 'code', 'programming'];
+    const hasProgrammingKeywords = programmingKeywords.some(keyword => question.toLowerCase().includes(keyword));
     
-    if (hasMathKeywords) {
-      // Find the option with numbers and mathematical operations
-      const mathOption = options.findIndex(opt => 
-        /\d+/.test(opt) && (opt.includes('+') || opt.includes('-') || opt.includes('*') || opt.includes('/') || opt.includes('='))
+    if (hasProgrammingKeywords) {
+      // Find the option with programming terms
+      const programmingOption = options.findIndex(opt => 
+        programmingKeywords.some(keyword => opt.toLowerCase().includes(keyword))
       );
       
-      if (mathOption !== -1) {
-        analysis.correctAnswer = mathOption;
-        analysis.reasoning = `Based on mathematical analysis, option ${mathOption + 1} contains the correct numerical solution.`;
-        analysis.explanation = 'The AI analyzed the mathematical structure and identified the correct calculation.';
+      if (programmingOption !== -1) {
+        analysis.correctAnswer = programmingOption;
+        analysis.reasoning = `Based on programming analysis, option ${programmingOption + 1} contains the correct programming concept.`;
+        analysis.explanation = 'The AI analyzed the programming logic and identified the correct solution.';
       }
     }
-  } else if (subject.toLowerCase().includes('science') || subject.toLowerCase().includes('physics') || subject.toLowerCase().includes('chemistry')) {
-    // For science questions, look for scientific terminology
-    const scienceTerms = ['electron', 'proton', 'neutron', 'molecule', 'atom', 'energy', 'force', 'gravity'];
-    const scienceOption = options.findIndex(opt => 
-      scienceTerms.some(term => opt.toLowerCase().includes(term))
+  } else if (subject.toLowerCase().includes('network') || subject.toLowerCase().includes('management') || question.toLowerCase().includes('network') || question.toLowerCase().includes('protocol')) {
+    // For network questions, look for network terminology
+    const networkTerms = ['tcp', 'ip', 'dns', 'router', 'switch', 'protocol', 'lan', 'wan', 'network'];
+    const networkOption = options.findIndex(opt => 
+      networkTerms.some(term => opt.toLowerCase().includes(term))
     );
     
-    if (scienceOption !== -1) {
-      analysis.correctAnswer = scienceOption;
-      analysis.reasoning = `Scientific analysis indicates option ${scienceOption + 1} contains the correct scientific concept.`;
-      analysis.explanation = 'The AI evaluated the scientific accuracy and relevance of each option.';
+    if (networkOption !== -1) {
+      analysis.correctAnswer = networkOption;
+      analysis.reasoning = `Network analysis indicates option ${networkOption + 1} contains the correct network concept.`;
+      analysis.explanation = 'The AI evaluated the network architecture and protocol concepts.';
     }
-  } else if (subject.toLowerCase().includes('computer') || subject.toLowerCase().includes('programming')) {
-    // For computer science questions
-    const csTerms = ['algorithm', 'function', 'variable', 'loop', 'array', 'object', 'class'];
-    const csOption = options.findIndex(opt => 
-      csTerms.some(term => opt.toLowerCase().includes(term))
+  } else if (subject.toLowerCase().includes('database') || question.toLowerCase().includes('sql') || question.toLowerCase().includes('database') || question.toLowerCase().includes('query')) {
+    // For database questions, look for database terminology
+    const databaseTerms = ['sql', 'query', 'table', 'database', 'join', 'select', 'insert', 'update', 'delete'];
+    const databaseOption = options.findIndex(opt => 
+      databaseTerms.some(term => opt.toLowerCase().includes(term))
     );
     
-    if (csOption !== -1) {
-      analysis.correctAnswer = csOption;
-      analysis.reasoning = `Computer science analysis identifies option ${csOption + 1} as the correct answer.`;
-      analysis.explanation = 'The AI evaluated the programming concepts and logical correctness.';
+    if (databaseOption !== -1) {
+      analysis.correctAnswer = databaseOption;
+      analysis.reasoning = `Database analysis identifies option ${databaseOption + 1} as the correct answer.`;
+      analysis.explanation = 'The AI evaluated the database concepts and SQL syntax.';
+    }
+  } else if (subject.toLowerCase().includes('applications') || subject.toLowerCase().includes('frameworks') || question.toLowerCase().includes('framework') || question.toLowerCase().includes('application')) {
+    // For application and framework questions
+    const appTerms = ['framework', 'application', 'software', 'web', 'mobile', 'api', 'rest', 'mvc'];
+    const appOption = options.findIndex(opt => 
+      appTerms.some(term => opt.toLowerCase().includes(term))
+    );
+    
+    if (appOption !== -1) {
+      analysis.correctAnswer = appOption;
+      analysis.reasoning = `Application analysis identifies option ${appOption + 1} as the correct answer.`;
+      analysis.explanation = 'The AI evaluated the application development and framework concepts.';
     }
   } else {
     // For general questions, use keyword matching and length analysis

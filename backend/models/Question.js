@@ -29,6 +29,12 @@ const questionSchema = new mongoose.Schema({
     min: 1,
     max: 8
   },
+  academicYear: {
+    type: String,
+    required: true,
+    trim: true,
+    enum: ['1st Year', '2nd Year', '3rd Year', '4th Year']
+  },
   subject: {
     type: String,
     required: true,
@@ -67,5 +73,6 @@ questionSchema.index({ title: 'text', description: 'text' });
 questionSchema.index({ tags: 1 });
 questionSchema.index({ subject: 1 });
 questionSchema.index({ semester: 1 });
+questionSchema.index({ academicYear: 1 });
 
 module.exports = mongoose.model('Question', questionSchema);

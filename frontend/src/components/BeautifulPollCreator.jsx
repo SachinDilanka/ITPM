@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -51,9 +51,16 @@ const BeautifulPollCreator = ({
   const [formErrors, setFormErrors] = useState({});
   const [hoveredField, setHoveredField] = useState(null);
 
+  // Debug useEffect to monitor pollData changes
+  useEffect(() => {
+    console.log('pollData changed:', pollData);
+  }, [pollData]);
+
   const subjects = [
-    'Mathematics', 'Physics', 'Chemistry', 'Computer Science', 
-    'Biology', 'English'
+    'Introduction to Programming', 
+    'Network Design and Management', 
+    'Database Systems', 
+    'Programming Applications and Frameworks'
   ];
 
   const handleFieldChange = (field, value) => {
@@ -676,7 +683,7 @@ const BeautifulPollCreator = ({
                     },
                   }}>
                     {subjects.map((subject, index) => (
-                      <motion.div
+                        <motion.div
                         key={subject}
                         initial={{ opacity: 0, y: 30, rotateX: 90 }}
                         animate={{ opacity: 1, y: 0, rotateX: 0 }}
@@ -778,18 +785,16 @@ const BeautifulPollCreator = ({
                           transition={{ duration: 2, repeat: pollData.subject === subject ? Infinity : 0 }}
                         >
                           <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                            {subject === 'Mathematics' && '📐'}
-                            {subject === 'Physics' && '⚛️'}
-                            {subject === 'Chemistry' && '🧪'}
-                            {subject === 'Computer Science' && '💻'}
-                            {subject === 'Biology' && '🔬'}
-                            {subject === 'English' && '📚'}
+                            {subject === 'Introduction to Programming' && '💻'}
+                            {subject === 'Network Design and Management' && '🌐'}
+                            {subject === 'Database Systems' && '🗄️'}
+                            {subject === 'Programming Applications and Frameworks' && '⚙️'}
                           </Typography>
                           <Typography variant="caption" sx={{ fontSize: '0.75rem', opacity: 0.9 }}>
                             {subject}
                           </Typography>
                         </motion.div>
-                      </motion.div>
+                        </motion.div>
                     ))}
                   </Box>
                   {formErrors.subject && (
