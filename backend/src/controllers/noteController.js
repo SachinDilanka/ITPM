@@ -66,6 +66,38 @@ export const getMyNotes = async (req, res) => {
     }
 };
 
+// @desc    List all notes from all users
+// @route   GET /api/notes/all
+// @access  Private
+export const getAllNotes = async (_req, res) => {
+    try {
+        const notes = await Note.find({})
+            .populate('user', 'name')
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.status(200).json({
+            success: true,
+            count: notes.length,
+            data: notes.map((n) => ({
+                noteId: n._id,
+                pdfId: n._id,
+                title: n.title,
+                content: n.content,
+                createdAt: n.createdAt,
+                updatedAt: n.updatedAt,
+                authorName: n.user?.name || 'Unknown user',
+                authorId: n.user?._id || null,
+            })),
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Could not load all notes',
+        });
+    }
+};
+
 // @desc    Get one note (owner only)
 // @route   GET /api/notes/:id
 // @access  Private

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import Dashboard from './pages/Dashboard';
@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import MyNotes from './pages/MyNotes';
+import AllNotes from './pages/AllNotes';
 import NoteMaker from './pages/NoteMaker';
 import NoteDetail from './pages/NoteDetail';
 import NoteEdit from './pages/NoteEdit';
@@ -37,6 +38,11 @@ function NavBar() {
             <li>
               <NavLink to="/notes" className={navClass}>
                 My notes
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/all-notes" className={navClass}>
+                All notes
               </NavLink>
             </li>
             <li>
@@ -79,12 +85,15 @@ function NavBar() {
 }
 
 function App() {
-  return (
-    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+  function AppContent() {
+    const location = useLocation();
+    const isAllNotesPage = location.pathname === '/all-notes';
+
+    return (
       <div className="App">
         <NavBar />
 
-        <main className="app-main">
+        <main className={`app-main${isAllNotesPage ? ' app-main--wide' : ''}`}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
@@ -129,10 +138,24 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/all-notes"
+              element={
+                <PrivateRoute>
+                  <AllNotes />
+                </PrivateRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
       </div>
+    );
+  }
+
+  return (
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AppContent />
     </Router>
   );
 }

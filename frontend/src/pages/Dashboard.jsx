@@ -62,10 +62,16 @@ export default function Dashboard() {
         <h2>Navigate</h2>
         <ul className="page-links__list">
           {!loading && user && (
-            <li>
-              <Link to="/profile">Your profile</Link>
-              <span className="page-links__desc">View account &amp; photo</span>
-            </li>
+            <>
+              <li>
+                <Link to="/all-notes">All PDFs</Link>
+                <span className="page-links__desc">Browse all user notes &amp; PDFs</span>
+              </li>
+              <li>
+                <Link to="/profile">Your profile</Link>
+                <span className="page-links__desc">View account &amp; photo</span>
+              </li>
+            </>
           )}
           {!loading && !user && (
             <>

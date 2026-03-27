@@ -1,6 +1,7 @@
 import express from 'express';
 import {
     createNote,
+    getAllNotes,
     getMyNotes,
     getNoteById,
     updateNote,
@@ -15,6 +16,7 @@ router.use(protect);
 
 router.post('/', createNote);
 router.get('/', getMyNotes);
+router.get('/all', getAllNotes);
 
 router.get('/:id', validateMongoId, getNoteById);
 router.put('/:id', validateMongoId, updateNote);
