@@ -925,7 +925,7 @@ export const Profile = () => {
 
       {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={3}>
+        <Grid xs={12} md={3}>
           <Paper sx={{ 
             p: 3, 
             textAlign: 'center',
@@ -939,7 +939,7 @@ export const Profile = () => {
           </Paper>
         </Grid>
         
-        <Grid item xs={12} md={3}>
+        <Grid xs={12} md={3}>
           <Paper sx={{ 
             p: 3, 
             textAlign: 'center',
@@ -953,7 +953,7 @@ export const Profile = () => {
           </Paper>
         </Grid>
         
-        <Grid item xs={12} md={3}>
+        <Grid xs={12} md={3}>
           <Paper sx={{ 
             p: 3, 
             textAlign: 'center',
@@ -967,7 +967,7 @@ export const Profile = () => {
           </Paper>
         </Grid>
         
-        <Grid item xs={12} md={3}>
+        <Grid xs={12} md={3}>
           <Paper sx={{ 
             p: 3, 
             textAlign: 'center',
@@ -1104,7 +1104,7 @@ export const Profile = () => {
               <Typography variant="h6" sx={{ color: '#fff', mb: 3 }}>My Questions</Typography>
               <Grid container spacing={2}>
                 {userQuestions.map((question) => (
-                  <Grid item xs={12} key={question.id}>
+                  <Grid size={{ xs: 12 }} key={question.id}>
                     <Paper sx={{ 
                       p: 2, 
                       background: 'rgba(147, 51, 234, 0.1)',
@@ -1151,7 +1151,7 @@ export const Profile = () => {
               {sharedQuestions.length > 0 ? (
                 <Grid container spacing={2}>
                   {sharedQuestions.map((question) => (
-                    <Grid item xs={12} key={question._id}>
+                    <Grid size={{ xs: 12 }} key={question._id}>
                       <Paper sx={{ 
                         p: 2, 
                         background: 'rgba(147, 51, 234, 0.1)',
@@ -1394,7 +1394,7 @@ export const Profile = () => {
               <Typography variant="h6" sx={{ color: '#fff', mb: 3 }}>Achievements</Typography>
               <Grid container spacing={2}>
                 {userProfile.achievements.map((achievement) => (
-                  <Grid item xs={12} md={6} key={achievement.id}>
+                  <Grid size={{ xs: 12, md: 6 }} key={achievement.id}>
                     <Paper sx={{ 
                       p: 2, 
                       display: 'flex', 
@@ -1439,7 +1439,7 @@ export const Profile = () => {
               ) : friends.length > 0 ? (
                 <Grid container spacing={2}>
                   {friends.map((friend) => (
-                    <Grid item xs={12} sm={6} md={4} key={friend.id}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={friend.id}>
                       <Paper sx={{ 
                         p: 2, 
                         textAlign: 'center',

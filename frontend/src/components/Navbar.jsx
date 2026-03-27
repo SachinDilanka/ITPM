@@ -260,18 +260,30 @@ export const Navbar = () => {
         }}
       >
         <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              fontWeight: 'bold',
-              background: 'linear-gradient(45deg, #9333ea, #ec4899)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}
-          >
-            📚 KnowVerse
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box
+              component="img"
+              src="/book-logo-192.png"
+              alt="KnowVerse"
+              sx={{
+                height: 28,
+                width: 28,
+                mr: 1
+              }}
+            />
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 'bold',
+                background: 'linear-gradient(45deg, #9333ea, #ec4899)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              KnowVerse
+            </Typography>
+          </Box>
           <IconButton onClick={() => setMobileMenuOpen(false)} sx={{ color: '#fff' }}>
             <Close />
           </IconButton>
