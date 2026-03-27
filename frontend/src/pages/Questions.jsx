@@ -2500,7 +2500,6 @@ const Questions = () => {
                   label="Question Title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
                   helperText="Be specific and imagine you're asking a question to another person"
                   sx={{
                     '& .MuiOutlinedInput-notchedOutline': {
@@ -2530,7 +2529,6 @@ const Questions = () => {
                   rows={4}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  required
                   helperText="Include all the information someone would need to answer your question"
                 />
               </Grid>
@@ -2876,7 +2874,6 @@ const Questions = () => {
                   label="Module"
                   value={formData.module}
                   onChange={(e) => setFormData({ ...formData, module: e.target.value })}
-                  required
                   helperText="Specify the module or topic (e.g., Calculus II, Mechanics, Organic Chemistry)"
                   sx={{
                     '& .MuiOutlinedInput-notchedOutline': {
