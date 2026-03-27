@@ -364,13 +364,15 @@ const Questions = () => {
       const response = await axios.get('http://localhost:5000/api/questions');
       console.log('Successfully fetched questions:', response.data.questions?.length || 0, 'questions');
       
-      // Preserve existing comments when updating questions
+      // Preserve existing comments and share counts when updating questions
       const normalizedQuestions = response.data.questions.map(q => {
         const existingQuestion = questions.find(eq => eq._id === q._id);
         const existingFilteredQuestion = filteredQuestions.find(fq => fq._id === q._id);
         return normalizeQuestion({
           ...q,
-          comments: existingQuestion?.comments || existingFilteredQuestion?.comments || []
+          comments: existingQuestion?.comments || existingFilteredQuestion?.comments || [],
+          shares: existingQuestion?.shares || existingFilteredQuestion?.shares || q.shares || 0,
+          sharedBy: existingQuestion?.sharedBy || existingFilteredQuestion?.sharedBy || q.sharedBy || []
         }, existingQuestion?.year || existingFilteredQuestion?.year || '2nd Year'); // Default year for existing questions
       });
       setQuestions(normalizedQuestions);
@@ -851,14 +853,61 @@ const Questions = () => {
         });
         
         console.log('Share API response:', response.data);
+        
+        // Use the share count from backend response
+        const backendShareCount = response.data.shares || (question.shares || 0) + 1;
+        
+        // Update local state to reflect the share with backend count
+        setQuestions(prev => prev.map(q => 
+          q._id === question._id 
+            ? { 
+                ...q, 
+                shares: backendShareCount, 
+                sharedBy: Array.isArray(q.sharedBy) ? [...q.sharedBy, currentUser.id] : [currentUser.id]
+              }
+            : q
+        ));
+        
+        setFilteredQuestions(prev => prev.map(q => 
+          q._id === question._id 
+            ? { 
+                ...q, 
+                shares: backendShareCount, 
+                sharedBy: Array.isArray(q.sharedBy) ? [...q.sharedBy, currentUser.id] : [currentUser.id]
+              }
+            : q
+        ));
+        
+        setShareMenu(null);
+        showSnackbar('Question shared to your profile!', 'success');
+        
+        // Prepare the shared question data for the event
+        const sharedQuestionData = {
+          ...question, 
+          shares: backendShareCount, 
+          sharedBy: Array.isArray(question.sharedBy) ? [...question.sharedBy, currentUser.id] : [currentUser.id]
+        };
+        
+        console.log('Dispatching questionShared event with data:', sharedQuestionData);
+        
+        // Also update the Profile component's shared questions by triggering a storage event
+        window.dispatchEvent(new CustomEvent('questionShared', { 
+          detail: sharedQuestionData
+        }));
+        
+        console.log('questionShared event dispatched successfully');
+        return;
       }
+      
+      // Handle mock data (offline mode)
+      const localShareCount = (question.shares || 0) + 1;
       
       // Update local state to reflect the share
       setQuestions(prev => prev.map(q => 
         q._id === question._id 
           ? { 
               ...q, 
-              shares: (q.shares || 0) + 1, 
+              shares: localShareCount, 
               sharedBy: Array.isArray(q.sharedBy) ? [...q.sharedBy, currentUser.id] : [currentUser.id]
             }
           : q
@@ -868,19 +917,19 @@ const Questions = () => {
         q._id === question._id 
           ? { 
               ...q, 
-              shares: (q.shares || 0) + 1, 
+              shares: localShareCount, 
               sharedBy: Array.isArray(q.sharedBy) ? [...q.sharedBy, currentUser.id] : [currentUser.id]
             }
           : q
       ));
       
       setShareMenu(null);
-      showSnackbar(isMockData ? 'Question shared to your profile! (demo mode)' : 'Question shared to your profile!', 'success');
+      showSnackbar('Question shared to your profile! (demo mode)', 'success');
       
       // Prepare the shared question data for the event
       const sharedQuestionData = {
         ...question, 
-        shares: (question.shares || 0) + 1, 
+        shares: localShareCount, 
         sharedBy: Array.isArray(question.sharedBy) ? [...question.sharedBy, currentUser.id] : [currentUser.id]
       };
       
@@ -896,11 +945,13 @@ const Questions = () => {
     } catch (error) {
       console.error('Error sharing question:', error);
       // Fallback to local state if backend is not available
+      const fallbackShareCount = (question.shares || 0) + 1;
+      
       setQuestions(prev => prev.map(q => 
         q._id === question._id 
           ? { 
               ...q, 
-              shares: (q.shares || 0) + 1, 
+              shares: fallbackShareCount, 
               sharedBy: Array.isArray(q.sharedBy) ? [...q.sharedBy, currentUser.id] : [currentUser.id]
             }
           : q
@@ -910,7 +961,7 @@ const Questions = () => {
         q._id === question._id 
           ? { 
               ...q, 
-              shares: (q.shares || 0) + 1, 
+              shares: fallbackShareCount, 
               sharedBy: Array.isArray(q.sharedBy) ? [...q.sharedBy, currentUser.id] : [currentUser.id]
             }
           : q
@@ -922,7 +973,7 @@ const Questions = () => {
       // Prepare the shared question data for the event
       const sharedQuestionData = {
         ...question, 
-        shares: (question.shares || 0) + 1, 
+        shares: fallbackShareCount, 
         sharedBy: Array.isArray(question.sharedBy) ? [...question.sharedBy, currentUser.id] : [currentUser.id]
       };
       
