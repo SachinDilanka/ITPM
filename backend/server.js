@@ -2,9 +2,20 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './src/config/db.js';
+import { errorHandler, notFound } from './src/middleware/errorMiddleware.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import commentRoutes from './src/routes/commentRoute.js';
 import ratingRoutes from './src/routes/ratingRoute.js';
-import { errorHandler, notFound } from './src/middleware/errorMiddleware.js';
+import authRoutes from './src/routes/authRoutes.js';
+import adminRoutes from './src/routes/adminRoutes.js';
+import filterRoutes from './src/routes/filterRoutes.js';
+import notesRoutes from './src/routes/notesRoutes.js';
+import queueRoutes from './src/routes/queueRoutes.js';
+import analyticsRoutes from './src/routes/analyticsRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -19,9 +30,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files as static assets
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use('/api/comments', commentRoutes);
 app.use('/api/ratings', ratingRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/filter', filterRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/queue', queueRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Base route for testing
 app.get('/', (req, res) => {
