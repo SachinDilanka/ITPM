@@ -1,5 +1,9 @@
+const fs = require('fs');
+const path = require('path');
 const User = require('../models/User');
 const { createToken } = require('../utils/helpers');
+
+const uploadsAbsoluteDir = path.join(__dirname, '..', '..', 'uploads');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -38,6 +42,7 @@ const registerUser = async (req, res, next) => {
                 email: user.email,
                 role: user.role,
                 isApproved: user.isApproved,
+                avatarUrl: user.avatarUrl || '',
                 token: createToken(user._id),
             });
         } else {
@@ -78,6 +83,7 @@ const loginUser = async (req, res, next) => {
                 email: user.email,
                 role: user.role,
                 isApproved: user.isApproved,
+                avatarUrl: user.avatarUrl || '',
                 token: createToken(user._id),
             });
         } else {
@@ -89,4 +95,46 @@ const loginUser = async (req, res, next) => {
     }
 };
 
-module.exports = { registerUser, loginUser };
+// @desc    Upload profile picture (replaces previous)
+// @route   POST /api/auth/profile/avatar
+const updateAvatar = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            res.status(400);
+            throw new Error('No image file provided');
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            res.status(404);
+            throw new Error('User not found');
+        }
+
+        if (user.avatarUrl) {
+            const oldFile = path.join(uploadsAbsoluteDir, path.basename(user.avatarUrl));
+            if (fs.existsSync(oldFile)) {
+                fs.unlinkSync(oldFile);
+            }
+        }
+
+        user.avatarUrl = `/uploads/${req.file.filename}`;
+        await user.save();
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            isApproved: user.isApproved,
+            avatarUrl: user.avatarUrl,
+        });
+    } catch (error) {
+        if (req.file) {
+            const uploaded = path.join(uploadsAbsoluteDir, req.file.filename);
+            if (fs.existsSync(uploaded)) fs.unlinkSync(uploaded);
+        }
+        next(error);
+    }
+};
+
+module.exports = { registerUser, loginUser, updateAvatar };

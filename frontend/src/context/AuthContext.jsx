@@ -57,8 +57,19 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     }, []);
 
+    const patchUser = useCallback((updates) => {
+        setUser((prev) => {
+            if (!prev) return prev;
+            const next = { ...prev, ...updates };
+            localStorage.setItem('userInfo', JSON.stringify(next));
+            return next;
+        });
+    }, []);
+
     return (
-        <AuthContext.Provider value={{ user, loading, error, login, register, logout, clearError }}>
+        <AuthContext.Provider
+            value={{ user, loading, error, login, register, logout, clearError, patchUser }}
+        >
             {children}
         </AuthContext.Provider>
     );

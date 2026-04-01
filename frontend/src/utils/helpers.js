@@ -12,6 +12,16 @@ export const truncateText = (text, maxLength = 100) => {
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 };
 
+/** Full URL for paths served by the API origin (e.g. /uploads/...) */
+export const getMediaUrl = (relativePath) => {
+    if (!relativePath || typeof relativePath !== 'string') return '';
+    const p = relativePath.trim();
+    if (!p) return '';
+    if (p.startsWith('http://') || p.startsWith('https://')) return p;
+    const base = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+    return `${base}${p.startsWith('/') ? p : `/${p}`}`;
+};
+
 export const getInitials = (name = '') => {
     return name
         .split(' ')

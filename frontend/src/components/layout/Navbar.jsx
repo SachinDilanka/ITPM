@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Bell, ChevronDown, User, LogOut, Menu } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
-import { getInitials } from '../../utils/helpers';
+import { getInitials, getMediaUrl } from '../../utils/helpers';
 
 const Navbar = ({ onToggleSidebar }) => {
     const { user, logout } = useAuth();
@@ -69,7 +69,13 @@ const Navbar = ({ onToggleSidebar }) => {
                         style={{ cursor: 'pointer', gap: '0.625rem' }}
                         onClick={() => setDropdownOpen(!dropdownOpen)}
                     >
-                        <div className="user-avatar">{getInitials(user?.name)}</div>
+                        <div className="user-avatar">
+                            {getMediaUrl(user?.avatarUrl) ? (
+                                <img src={getMediaUrl(user.avatarUrl)} alt="" />
+                            ) : (
+                                getInitials(user?.name)
+                            )}
+                        </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.2 }}>{user?.name}</span>
                             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>

@@ -2,8 +2,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '..', 'uploads');
+// Same folder as server.js static: backend/uploads (not src/uploads)
+const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -36,4 +36,20 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 });
 
+const avatarFileFilter = (_req, file, cb) => {
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (allowed.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Only PNG, JPEG, or WebP images are allowed'), false);
+    }
+};
+
+const uploadAvatar = multer({
+    storage,
+    fileFilter: avatarFileFilter,
+    limits: { fileSize: 2 * 1024 * 1024 },
+});
+
 module.exports = upload;
+module.exports.uploadAvatar = uploadAvatar;

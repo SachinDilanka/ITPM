@@ -570,6 +570,13 @@ select.form-input {
 
 .user-avatar:hover { transform: scale(1.05); }
 
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .user-menu {
   position: relative;
 }

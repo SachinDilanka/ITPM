@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
         role: { type: String, enum: ['student', 'admin'], default: 'student' },
         isApproved: { type: Boolean, default: false },
         isSuspended: { type: Boolean, default: false },
+        avatarUrl: { type: String, default: '' },
     },
     { timestamps: true }
 );
