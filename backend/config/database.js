@@ -12,8 +12,6 @@ const connectDB = async () => {
     });
     
     console.log('✅ MongoDB Connected Successfully!');
-    console.log('📊 Database Host:', conn.connection.host);
-    console.log('🗄️  Database Name:', conn.connection.name || 'KnowVerse (default)');
     
     // Test the connection
     const db = mongoose.connection;
@@ -25,14 +23,12 @@ const connectDB = async () => {
       console.log('🔄 MongoDB reconnected');
     });
     
-    // Create a test collection to verify connection works
+    // Create a test collection to verify connection works (silent)
     try {
       await db.createCollection('connection_test');
-      console.log('✅ Database write test successful');
       await db.collection('connection_test').drop();
-      console.log('✅ Database cleanup successful');
     } catch (testError) {
-      console.log('ℹ️ Connection test completed (collection may already exist)');
+      // Silent test
     }
     
   } catch (error) {

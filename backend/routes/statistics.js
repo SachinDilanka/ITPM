@@ -62,15 +62,6 @@ router.get('/', async function(req, res) {
     
     const topicsCount = uniqueTopics.size;
     
-    console.log('📊 Real Statistics:', {
-      questions: questionsCount,
-      answers: answersCount,
-      users: usersCount,
-      polls: pollsCount,
-      comments: commentsCount,
-      topics: topicsCount
-    });
-    
     res.json({
       questionsAsked: questionsCount,
       answersProvided: answersCount,

@@ -164,28 +164,21 @@ router.get('/debug/list', async function(req, res) {
 router.get('/:id/stats', async function(req, res) {
   try {
     const userId = req.params.id;
-    console.log('=== USER STATS REQUEST ===');
-    console.log('Requested userId:', userId);
     
     // Get user's questions count
     const questionsCount = await Question.countDocuments({ author: userId });
-    console.log('Questions count:', questionsCount);
     
     // Get user's answers count
     const answersCount = await Answer.countDocuments({ author: userId });
-    console.log('Answers count:', answersCount);
     
     // Get user's polls count
     const pollsCount = await Poll.countDocuments({ author: userId });
-    console.log('Polls count:', pollsCount);
     
     // Get total likes on user's questions
     const userQuestions = await Question.find({ author: userId }).select('likes');
-    console.log('User questions found:', userQuestions.length);
     const totalLikes = userQuestions.reduce((sum, question) => {
       return sum + (Array.isArray(question.likes) ? question.likes.length : 0);
     }, 0);
-    console.log('Total likes:', totalLikes);
     
     // Get total shares on user's questions
     const totalShares = userQuestions.reduce((sum, question) => {
@@ -202,7 +195,6 @@ router.get('/:id/stats', async function(req, res) {
       author: userId, 
       isBestAnswer: true 
     });
-    console.log('Best answers count:', bestAnswersCount);
     
     // Get user's recent activity (last 5 items)
     const recentQuestions = await Question.find({ author: userId })
@@ -220,10 +212,6 @@ router.get('/:id/stats', async function(req, res) {
       .select('title description options createdAt subject year semester')
       .sort({ createdAt: -1 })
       .limit(3);
-    
-    console.log('Recent questions:', recentQuestions.length);
-    console.log('Recent answers:', recentAnswers.length);
-    console.log('Recent polls:', recentPolls.length);
     
     // Combine and format recent activity
     const recentActivity = [
@@ -276,7 +264,6 @@ router.get('/:id/stats', async function(req, res) {
       reputation: user?.reputation || 0
     };
     
-    console.log('Final result:', result);
     res.json(result);
   } catch (error) {
     console.error('User statistics error:', error);
