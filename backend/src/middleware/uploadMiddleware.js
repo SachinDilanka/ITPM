@@ -1,55 +1,34 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-// Same folder as server.js static: backend/uploads (not src/uploads)
-const uploadDir = path.join(__dirname, '..', '..', 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadDir = path.join(__dirname, '../../uploads/avatars');
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, uploadDir),
-    filename: (_req, file, cb) => {
-        const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-        cb(null, `${unique}${path.extname(file.originalname)}`);
+    destination: (_req, _file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+        const safe = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext) ? ext : '.jpg';
+        cb(null, `user-${req.user._id}-${Date.now()}${safe}`);
     },
 });
 
-const fileFilter = (_req, file, cb) => {
-    const allowed = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'image/png',
-        'image/jpeg',
-        'image/jpg',
-    ];
-    if (allowed.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only PDF, DOCX, PNG, and JPEG files are allowed'), false);
-    }
-};
+function fileFilter(_req, file, cb) {
+    const allowed = /^image\/(jpeg|png|gif|webp)$/i.test(file.mimetype);
+    if (allowed) return cb(null, true);
+    cb(new Error('Only JPEG, PNG, GIF, or WebP images are allowed'));
+}
 
-const upload = multer({
+export const uploadAvatar = multer({
     storage,
-    fileFilter,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
-});
-
-const avatarFileFilter = (_req, file, cb) => {
-    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-    if (allowed.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only PNG, JPEG, or WebP images are allowed'), false);
-    }
-};
-
-const uploadAvatar = multer({
-    storage,
-    fileFilter: avatarFileFilter,
     limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter,
 });
-
-module.exports = upload;
-module.exports.uploadAvatar = uploadAvatar;

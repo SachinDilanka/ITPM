@@ -25,4 +25,5 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# Uploaded files (avatars)
 uploads/
