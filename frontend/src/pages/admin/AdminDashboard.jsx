@@ -107,6 +107,17 @@ const AdminDashboard = () => {
                                     <div className="queue-info">
                                         <div className="queue-title">{item.title}</div>
                                         <div className="queue-meta">{item.subject} · {item.uploadedBy?.name || 'Unknown'}</div>
+                                        {(item.createdAt || item.lastEditedAt) && (
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                                                {item.createdAt && <span>Created: {formatDate(item.createdAt)}</span>}
+                                                {item.lastEditedAt && (
+                                                    <span>
+                                                        {item.createdAt ? ' · ' : ''}
+                                                        Last edited: {formatDate(item.lastEditedAt)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <select

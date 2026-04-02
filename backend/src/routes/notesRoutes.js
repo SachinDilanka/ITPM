@@ -1,13 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { createNote, getMyNotes } = require('../controllers/notesController');
+const {
+    createNote,
+    getMyNotes,
+    getMyNoteById,
+    getPublicApprovedNoteById,
+    updateMyNote,
+} = require('../controllers/notesController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-// All routes require authentication
+// Public route: allow anyone to view approved notes
+router.get('/public/:id', getPublicApprovedNoteById);
+
+// All other routes require authentication
 router.use(protect);
 
 router.post('/', upload.single('file'), createNote);
 router.get('/my', getMyNotes);
+
+router.get('/:id', getMyNoteById);
+router.put('/:id', upload.single('file'), updateMyNote);
 
 module.exports = router;

@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { translate } from '@vitalets/google-translate-api';
 
 // Bad words list - translated English text වලට check කරනවා
@@ -32,43 +31,6 @@ const translateToEnglish = async (text) => {
     }
 };
 
-// Gemini harmful content check only (quota save කරනවා)
-const checkHarmfulWithGemini = async (genAI, englishText) => {
-    const models = ['gemini-2.0-flash', 'gemini-1.5-flash-latest'];
-
-    for (const modelName of models) {
-        try {
-            const model = genAI.getGenerativeModel({ model: modelName });
-
-            const prompt = `Is the following English comment harmful, offensive, or contains hate speech, profanity, or insults? 
-
-Comment: "${englishText}"
-
-Reply with ONLY a valid JSON object:
-{
-  "isInappropriate": true or false,
-  "reason": "short reason if inappropriate, empty string if appropriate"
-}`;
-
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
-
-            const jsonMatch = text.match(/\{[\s\S]*?\}/);
-            if (jsonMatch) {
-                return JSON.parse(jsonMatch[0]);
-            }
-        } catch (error) {
-            if (error.message?.includes('429') || error.message?.includes('quota')) {
-                console.log(`Gemini quota exceeded on ${modelName}.`);
-                continue;
-            }
-            console.log(`Gemini ${modelName} failed: ${error.message}`);
-        }
-    }
-    return null;
-};
-
 export const checkInappropriateContent = async (req, res, next) => {
     try {
         const { comment } = req.body;
@@ -93,21 +55,7 @@ export const checkInappropriateContent = async (req, res, next) => {
             });
         }
 
-        // Step 3: Gemini harmful check on ENGLISH text (if API available)
-        if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here') {
-            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            const analysis = await checkHarmfulWithGemini(genAI, translatedComment);
-
-            if (analysis && analysis.isInappropriate === true) {
-                return res.status(400).json({
-                    success: false,
-                    message: '🚫 Your comment is harmful. Please write a respectful comment.',
-                    reason: analysis.reason || 'Harmful content detected'
-                });
-            }
-        }
-
-        // Step 4: Save translated English comment to req.body
+        // Step 3: Save translated English comment to req.body
         if (!isAlreadyEnglish) {
             req.body.originalComment = comment;          // Original language save
             req.body.comment = translatedComment;         // English translation save

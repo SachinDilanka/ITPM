@@ -33,6 +33,7 @@ const validate = (values, file) => {
 const UploadNote = () => {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
+    const editorRef = useRef(null);
 
     const [values, setValues] = useState({ title: '', subject: '', semester: '', year: '', description: '', priorityLevel: '' });
     const [touched, setTouched] = useState({});
@@ -69,12 +70,16 @@ const UploadNote = () => {
         setLoading(true);
         setServerError(null);
         try {
+            // Grab latest rich-text HTML before submitting.
+            const el = editorRef.current;
+            const descriptionHtml = el ? el.innerHTML : values.description;
+
             const formData = new FormData();
             formData.append('title', values.title.trim());
             formData.append('subject', values.subject);
             formData.append('semester', values.semester);
             formData.append('year', values.year);
-            formData.append('description', values.description);
+            formData.append('description', descriptionHtml);
             formData.append('priorityLevel', values.priorityLevel);
             if (selectedFile) formData.append('file', selectedFile);
 
@@ -86,6 +91,20 @@ const UploadNote = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const syncDescriptionFromEditor = () => {
+        const el = editorRef.current;
+        if (!el) return;
+        setValues((prev) => ({ ...prev, description: el.innerHTML }));
+    };
+
+    const applyEditorCommand = (command, value) => {
+        const el = editorRef.current;
+        if (!el) return;
+        el.focus();
+        document.execCommand(command, false, value);
+        syncDescriptionFromEditor();
     };
 
     const selectStyle = (name) => ({
@@ -101,7 +120,17 @@ const UploadNote = () => {
     });
 
     return (
-        <div className="page-container" style={{ maxWidth: 720 }}>
+        <div
+            className="page-container"
+            style={{
+                maxWidth: 720,
+                // Center the upload form vertically within the available viewport area
+                // (accounts for main navbar padding + this page's own padding).
+                minHeight: 'calc(100vh - var(--navbar-height) - 4rem)',
+                display: 'flex',
+                flexDirection: 'column',
+            }}
+        >
             <div className="page-header">
                 <h1>Upload Note</h1>
                 <p>Share your academic notes with the KnowVerse community</p>
@@ -121,8 +150,9 @@ const UploadNote = () => {
                 </div>
             )}
 
-            <div className="card">
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ marginTop: 'auto', marginBottom: 'auto', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <div className="card" style={{ width: '100%' }}>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     {/* Title */}
                     <Input
                         label="Note Title *"
@@ -179,14 +209,85 @@ const UploadNote = () => {
                     {/* Description */}
                     <div className="form-group">
                         <label className="form-label">Description (Optional)</label>
-                        <textarea
-                            name="description"
-                            className="form-input"
-                            placeholder="Brief description of what this note covers..."
-                            rows={3}
-                            value={values.description}
-                            onChange={handleChange}
-                            style={{ resize: 'vertical' }}
+                        {/* Rich text toolbar */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <select
+                                disabled={loading}
+                                defaultValue="Arial"
+                                onChange={(e) => applyEditorCommand('fontName', e.target.value)}
+                                style={{
+                                    padding: '0.55rem 0.75rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--bg-surface)',
+                                    color: 'var(--text-primary)',
+                                    outline: 'none',
+                                    fontSize: '0.875rem',
+                                    fontFamily: 'inherit',
+                                }}
+                            >
+                                <option value="Arial">Arial</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Georgia">Georgia</option>
+                                <option value="Courier New">Courier New</option>
+                                <option value="Verdana">Verdana</option>
+                            </select>
+
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={loading}
+                                onClick={() => applyEditorCommand('bold')}
+                            >
+                                Bold
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={loading}
+                                onClick={() => applyEditorCommand('italic')}
+                            >
+                                Italic
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={loading}
+                                onClick={() => applyEditorCommand('underline')}
+                            >
+                                Underline
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={loading}
+                                onClick={() => applyEditorCommand('hiliteColor', 'yellow')}
+                            >
+                                Highlight
+                            </Button>
+                        </div>
+
+                        {/* Rich text editor */}
+                        <div
+                            ref={editorRef}
+                            contentEditable
+                            suppressContentEditableWarning
+                            onInput={syncDescriptionFromEditor}
+                            style={{
+                                minHeight: 120,
+                                padding: '0.8rem 0.875rem',
+                                borderRadius: 'var(--radius-sm)',
+                                border: `1px solid var(--border)`,
+                                background: 'var(--bg-surface)',
+                                color: 'var(--text-primary)',
+                                outline: 'none',
+                                lineHeight: 1.6,
+                                whiteSpace: 'pre-wrap',
+                            }}
                         />
                     </div>
 
@@ -261,7 +362,8 @@ const UploadNote = () => {
                             Cancel
                         </Button>
                     </div>
-                </form>
+                    </form>
+                </div>
             </div>
 
             <div className="alert alert-info" style={{ marginTop: '1.5rem' }}>

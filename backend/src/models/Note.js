@@ -14,6 +14,7 @@ const noteSchema = new mongoose.Schema(
         status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
         priorityLevel: { type: String, enum: ['Low', 'Medium', 'High'], default: 'Medium' },
         uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        lastEditedAt: { type: Date, default: null },
     },
     { timestamps: true }
 );

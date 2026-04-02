@@ -1,17 +1,47 @@
 import { useRef, useState } from 'react';
-import { User, Mail, ShieldCheck, BookOpen, Camera } from 'lucide-react';
+import { User, Mail, ShieldCheck, BookOpen, Camera, FileText, Download } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
-import { getInitials, capitalizeFirst, getMediaUrl } from '../../utils/helpers';
+import { getInitials, capitalizeFirst, getMediaUrl, formatDate, statusBadgeClass } from '../../utils/helpers';
 import { uploadAvatarApi } from '../../api/authApi';
+import { getMyNotesApi } from '../../api/notesApi';
 import Button from '../../components/ui/Button';
+import useFetch from '../../hooks/useFetch';
+import Spinner from '../../components/ui/Spinner';
+import { useNavigate } from 'react-router-dom';
+
+const noteStatusLabel = (status) => {
+    const s = status?.toLowerCase?.();
+    if (s === 'pending') return 'Pending Approval';
+    if (s === 'approved') return 'Approved';
+    if (s === 'rejected') return 'Rejected';
+    return status || 'Unknown';
+};
 
 const Profile = () => {
     const { user, patchUser } = useAuth();
+    const navigate = useNavigate();
     const fileInputRef = useRef(null);
     const [avatarLoading, setAvatarLoading] = useState(false);
     const [avatarError, setAvatarError] = useState(null);
 
     const avatarSrc = getMediaUrl(user?.avatarUrl);
+
+    const {
+        data: myNotesData,
+        loading: notesLoading,
+        error: notesError,
+    } = useFetch(getMyNotesApi);
+
+    const notes = myNotesData?.notes || [];
+
+    const openNote = (note) => {
+        if (!note) return;
+        if (note.status === 'pending') {
+            navigate(`/student/notes/${note._id}/edit`);
+            return;
+        }
+        navigate(`/student/notes/${note._id}`);
+    };
 
     const handleAvatarChange = async (e) => {
         const file = e.target.files?.[0];
@@ -131,6 +161,127 @@ const Profile = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+
+                <div style={{ marginTop: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <FileText size={18} color="var(--primary-light)" />
+                            <h3 style={{ margin: 0, fontSize: '1rem' }}>My Notes</h3>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            {notes.length} total
+                        </span>
+                    </div>
+
+                    {notesLoading && <Spinner message="Loading your notes..." />}
+
+                    {!notesLoading && notesError && (
+                        <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
+                            {notesError}
+                        </div>
+                    )}
+
+                    {!notesLoading && !notesError && notes.length === 0 && (
+                        <div className="alert alert-info" style={{ marginBottom: 0 }}>
+                            No notes uploaded yet.
+                        </div>
+                    )}
+
+                    {!notesLoading && !notesError && notes.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {notes.map((note) => (
+                                <div
+                                    key={note._id}
+                                    onClick={() => openNote(note)}
+                                    style={{
+                                        padding: '0.9rem 1rem',
+                                        background: 'var(--bg-surface)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: '1px solid var(--border)',
+                                        cursor: note?._id ? 'pointer' : 'default',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>{note.title}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                                                {note.subject && `${note.subject} · `}
+                                                {note.semester ? `Sem ${note.semester}` : ''}
+                                                {note.year ? ` · Year ${note.year}` : ''}
+                                            </div>
+                                            {note.description && (
+                                                <div
+                                                    style={{
+                                                        fontSize: '0.85rem',
+                                                        color: 'var(--text-secondary)',
+                                                        marginBottom: '0.5rem',
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 3,
+                                                        WebkitBoxOrient: 'vertical',
+                                                        overflow: 'hidden',
+                                                    }}
+                                                    dangerouslySetInnerHTML={{ __html: note.description }}
+                                                />
+                                            )}
+                                        </div>
+
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                            <span className={`badge ${statusBadgeClass(note.status)}`}>{noteStatusLabel(note.status)}</span>
+                                            {(note.status === 'pending' || note.status === 'approved') && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/student/notes/${note._id}/edit`);
+                                                    }}
+                                                >
+                                                    Edit
+                                                </Button>
+                                            )}
+                                            {note.createdAt && (
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    Created: {formatDate(note.createdAt)}
+                                                </span>
+                                            )}
+                                            {note.lastEditedAt && (
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    Last edited: {formatDate(note.lastEditedAt)}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {note.fileUrl && (
+                                        <a
+                                            href={getMediaUrl(note.fileUrl)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                marginTop: '0.25rem',
+                                                fontSize: '0.82rem',
+                                                fontWeight: 700,
+                                                color: 'var(--primary-light)',
+                                                textDecoration: 'none',
+                                                border: '1px solid var(--primary)',
+                                                padding: '0.35rem 0.65rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                            }}
+                                        >
+                                            <Download size={14} />
+                                            View / Download
+                                        </a>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

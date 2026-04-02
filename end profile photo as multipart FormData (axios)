@@ -1,0 +1,19 @@
+[1mdiff --git a/frontend/src/api/axiosInstance.js b/frontend/src/api/axiosInstance.js[m
+[1mindex ffc9be2..a4935f5 100644[m
+[1m--- a/frontend/src/api/axiosInstance.js[m
+[1m+++ b/frontend/src/api/axiosInstance.js[m
+[36m@@ -10,6 +10,14 @@[m [mconst axiosInstance = axios.create({[m
+ // Request interceptor – attach JWT token from localStorage[m
+ axiosInstance.interceptors.request.use([m
+     (config) => {[m
+[32m+[m[32m        // Default JSON Content-Type makes axios stringify FormData as JSON — multer then sees no file[m
+[32m+[m[32m        if (config.data instanceof FormData && config.headers) {[m
+[32m+[m[32m            if (typeof config.headers.delete === 'function') {[m
+[32m+[m[32m                config.headers.delete('Content-Type');[m
+[32m+[m[32m            } else {[m
+[32m+[m[32m                delete config.headers['Content-Type'];[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+         const userInfo = localStorage.getItem('userInfo');[m
+         if (userInfo) {[m
+             const { token } = JSON.parse(userInfo);[m

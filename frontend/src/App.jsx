@@ -11,6 +11,8 @@ import StudentDashboard from './pages/student/Dashboard';
 import Notes from './pages/student/Notes';
 import UploadNote from './pages/student/UploadNote';
 import Profile from './pages/student/Profile';
+import EditNote from './pages/student/EditNote';
+import NoteDetail from './pages/student/NoteDetail';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -41,6 +43,8 @@ const App = () => {
         <Route path="/student/notes" element={<Notes />} />
         <Route path="/student/upload" element={<UploadNote />} />
         <Route path="/student/profile" element={<Profile />} />
+        <Route path="/student/notes/:id" element={<NoteDetail />} />
+        <Route path="/student/notes/:id/edit" element={<EditNote />} />
       </Route>
 
       {/* Admin Routes */}

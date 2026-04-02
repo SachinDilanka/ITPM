@@ -845,6 +845,15 @@ select.form-input {
   border: 1px solid var(--border);
 }
 .note-card-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+
+/* Rich-text highlight output (from execCommand hiliteColor) */
+mark {
+  background: rgba(245, 158, 11, 0.25);
+  color: inherit;
+  padding: 0 0.15em;
+  border-radius: 3px;
+}
+
 .note-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border); }
 .note-card-author { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
 

@@ -14,3 +14,14 @@ export const createNoteApi = (formData) =>
 export const getMyNotesApi = () =>
     axiosInstance.get('/notes/my');
 
+export const getPublicNoteByIdApi = (id) =>
+    axiosInstance.get(`/notes/public/${id}`);
+
+export const getMyNoteByIdApi = (id) =>
+    axiosInstance.get(`/notes/${id}`);
+
+export const updateMyNoteApi = (id, formData) =>
+    axiosInstance.put(`/notes/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
