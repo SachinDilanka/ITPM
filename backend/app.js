@@ -3,18 +3,21 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/database');
 
+// Load environment variables
+dotenv.config();
+
 const questionsRouter = require('./routes/questions');
 const pollsRouter = require('./routes/polls');
 const usersRouter = require('./routes/users');
 const commentsRouter = require('./routes/comments');
 const aiRouter = require('./routes/ai');
 const statisticsRouter = require('./routes/statistics');
-
-dotenv.config();
+const statsRouter = require('./routes/stats');
 
 const app = express();
 
-connectDB();
+// Connect to database (non-blocking)
+connectDB().catch(console.error);
 
 app.use(cors());
 app.use(express.json());
@@ -34,6 +37,12 @@ app.use('/api/users', usersRouter);
 app.use('/api/comments', commentsRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/statistics', statisticsRouter);
+app.use('/api/stats', statsRouter);
+
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Test route is working!' });
+});
 
 // Error handling middleware for async routes
 app.use((err, req, res, next) => {

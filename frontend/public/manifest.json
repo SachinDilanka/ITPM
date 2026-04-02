@@ -1,20 +1,8 @@
 {
   "short_name": "KnowVerse",
   "name": "KnowVerse - Your Knowledge Universe",
-  "icons": [
-    {
-      "src": "book-logo-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "book-logo-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
-  ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#9333ea",
   "background_color": "#ffffff"
 }

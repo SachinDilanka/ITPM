@@ -12,11 +12,13 @@ import {
   useTheme,
   useMediaQuery
 } from '@mui/material';
-import {
+import { 
   Facebook,
   Twitter,
   LinkedIn,
   GitHub,
+  Instagram,
+  YouTube,
   Email,
   Phone,
   LocationOn,
@@ -27,6 +29,7 @@ import {
   AutoAwesome,
   RocketLaunch
 } from '@mui/icons-material';
+import './Footer.css';
 
 const Footer = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -409,42 +412,6 @@ const Footer = () => {
           </Fade>
         </Box>
       </Container>
-
-      {/* Add custom animations */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) translateX(0px);
-          }
-          25% {
-            transform: translateY(-20px) translateX(10px);
-          }
-          50% {
-            transform: translateY(10px) translateX(-10px);
-          }
-          75% {
-            transform: translateY(-10px) translateX(5px);
-          }
-        }
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: scale(1.1);
-            opacity: 0.8;
-          }
-        }
-        @keyframes rocket {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-5px) rotate(5deg);
-          }
-        }
-      `}</style>
     </Box>
   );
 };
