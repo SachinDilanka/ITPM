@@ -1,5 +1,5 @@
-const asyncHandler = require('express-async-handler');
-const Note = require('../models/Note');
+import asyncHandler from 'express-async-handler';
+import Note from '../models/Note.js';
 
 // @desc  Create / upload a new note
 // @route POST /api/notes
@@ -40,4 +40,4 @@ const getMyNotes = asyncHandler(async (req, res) => {
     res.json({ notes });
 });
 
-module.exports = { createNote, getMyNotes };
+export { createNote, getMyNotes };

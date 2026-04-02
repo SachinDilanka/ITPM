@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import { filterNotes } from '../controllers/filterController.js';
+
 const router = express.Router();
-const { filterNotes } = require('../controllers/filterController');
 
 router.get('/notes', filterNotes);
 
-module.exports = router;
+export default router;

@@ -1,6 +1,6 @@
-const User = require('../models/User');
-const Note = require('../models/Note');
-const Report = require('../models/Report');
+import User from '../models/User.js';
+import Note from '../models/Note.js';
+import Report from '../models/Report.js';
 
 const getPendingUsers = async (req, res) => {
     const users = await User.find({ role: 'student', isApproved: false, isSuspended: false }).select('-password');
@@ -91,7 +91,7 @@ const getReportedNotes = async (req, res) => {
     res.json(reports);
 };
 
-module.exports = {
+export {
     getPendingUsers,
     getAllStudents,
     getSuspendedStudents,

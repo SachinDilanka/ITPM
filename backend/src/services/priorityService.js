@@ -14,4 +14,4 @@ const sortByPriority = (notes) => {
         .sort((a, b) => b.priorityScore - a.priorityScore);
 };
 
-module.exports = { calculatePriorityScore, sortByPriority };
+export { calculatePriorityScore, sortByPriority };

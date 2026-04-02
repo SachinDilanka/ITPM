@@ -1,18 +1,91 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Search, Filter, BookOpen } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { filterNotesApi } from '../../api/notesApi';
+import { getRatingSummariesApi, upsertRatingApi } from '../../api/ratingsApi';
+import useAuth from '../../hooks/useAuth';
 import NoteCard from '../../components/cards/NoteCard';
 import Spinner from '../../components/ui/Spinner';
 import Button from '../../components/ui/Button';
 import { SUBJECTS, SEMESTERS, YEARS } from '../../utils/constants';
 
 const Notes = () => {
+    const { user } = useAuth();
     const [filters, setFilters] = useState({ subject: '', semester: '', year: '', status: 'approved' });
+    const [ratingsByNoteId, setRatingsByNoteId] = useState({});
+    const [ratingLoadingNoteId, setRatingLoadingNoteId] = useState(null);
 
     const fetchFn = useCallback(() => filterNotesApi(filters), [filters]);
     const { data, loading, error, execute } = useFetch(fetchFn);
-    const notes = data?.notes || data || [];
+    const notes = useMemo(() => data?.notes || data || [], [data]);
+
+    useEffect(() => {
+        if (!user?._id || notes.length === 0) {
+            setRatingsByNoteId({});
+            return;
+        }
+
+        let cancelled = false;
+        getRatingSummariesApi(notes.map((note) => note._id))
+            .then((res) => {
+                if (cancelled) return;
+                const map = (res.data?.data || []).reduce((acc, row) => {
+                    acc[String(row.noteId)] = row;
+                    return acc;
+                }, {});
+                setRatingsByNoteId(map);
+            })
+            .catch(() => {
+                if (!cancelled) setRatingsByNoteId({});
+            });
+
+        return () => { cancelled = true; };
+    }, [notes, user?._id]);
+
+    const handleRateNote = async (noteId, rating) => {
+        setRatingLoadingNoteId(noteId);
+        try {
+            if (rating === 0) {
+                // Delete existing rating
+                const existing = ratingsByNoteId[noteId];
+                if (existing?.userRating) {
+                    const ratingId = existing.ratingId;
+                    if (ratingId) {
+                        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ratings/${ratingId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${user?.token}`,
+                            }
+                        });
+                    }
+                }
+            } else {
+                // Create or update rating
+                const res = await upsertRatingApi({ noteId, rating });
+                const summary = res.data?.summary;
+                if (summary) {
+                    setRatingsByNoteId((prev) => ({
+                        ...prev,
+                        [String(summary.noteId || noteId)]: summary,
+                    }));
+                }
+            }
+            // Clear the rating from UI after delete
+            if (rating === 0) {
+                setRatingsByNoteId((prev) => ({
+                    ...prev,
+                    [noteId]: {
+                        ...(prev[noteId] || {}),
+                        userRating: null,
+                    },
+                }));
+            }
+        } catch {
+            // Keep browsing uninterrupted if rating request fails.
+        } finally {
+            setRatingLoadingNoteId(null);
+        }
+    };
 
     const handleFilterChange = (e) => {
         setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -78,7 +151,14 @@ const Notes = () => {
                     </p>
                     <div className="grid-3">
                         {notes.map((note) => (
-                            <NoteCard key={note._id} note={note} />
+                            <NoteCard
+                                key={note._id}
+                                note={note}
+                                currentUserId={user?._id}
+                                ratingSummary={ratingsByNoteId[note._id]}
+                                onRate={handleRateNote}
+                                ratingBusy={ratingLoadingNoteId === note._id}
+                            />
                         ))}
                     </div>
                 </>

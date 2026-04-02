@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { createNote, getMyNotes } from '../controllers/notesController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js';
+
 const router = express.Router();
-const { createNote, getMyNotes } = require('../controllers/notesController');
-const { protect } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
 
 // All routes require authentication
 router.use(protect);
@@ -10,4 +11,4 @@ router.use(protect);
 router.post('/', upload.single('file'), createNote);
 router.get('/my', getMyNotes);
 
-module.exports = router;
+export default router;

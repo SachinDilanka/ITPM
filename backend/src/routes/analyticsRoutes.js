@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { getDashboardStats } from '../controllers/analyticsController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import { adminOnly } from '../middleware/adminMiddleware.js';
+
 const router = express.Router();
-const { getDashboardStats } = require('../controllers/analyticsController');
-const { protect } = require('../middleware/authMiddleware');
-const { adminOnly } = require('../middleware/adminMiddleware');
 
 router.get('/dashboard', protect, adminOnly, getDashboardStats);
 
-module.exports = router;
+export default router;

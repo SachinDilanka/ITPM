@@ -1,6 +1,5 @@
-const express = require('express');
-const router = express.Router();
-const {
+import express from 'express';
+import {
     getPendingUsers,
     getAllStudents,
     getSuspendedStudents,
@@ -11,9 +10,11 @@ const {
     rejectNote,
     updateNotePriority,
     getReportedNotes,
-} = require('../controllers/adminController');
-const { protect } = require('../middleware/authMiddleware');
-const { adminOnly } = require('../middleware/adminMiddleware');
+} from '../controllers/adminController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import { adminOnly } from '../middleware/adminMiddleware.js';
+
+const router = express.Router();
 
 router.use(protect, adminOnly);
 
@@ -28,4 +29,4 @@ router.put('/notes/:id/reject', rejectNote);
 router.put('/notes/:id/priority', updateNotePriority);
 router.get('/reports', getReportedNotes);
 
-module.exports = router;
+export default router;

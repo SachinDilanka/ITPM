@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { getPendingQueue } from '../controllers/queueController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import { adminOnly } from '../middleware/adminMiddleware.js';
+
 const router = express.Router();
-const { getPendingQueue } = require('../controllers/queueController');
-const { protect } = require('../middleware/authMiddleware');
-const { adminOnly } = require('../middleware/adminMiddleware');
 
 router.get('/pending', protect, adminOnly, getPendingQueue);
 
-module.exports = router;
+export default router;

@@ -5,12 +5,12 @@ import { getDashboardStatsApi } from '../../api/analyticsApi';
 import Spinner from '../../components/ui/Spinner';
 import { truncateText } from '../../utils/helpers';
 
-const StatWidget = ({ label, value, icon: Icon, color, subtitle }) => (
+const StatWidget = ({ label, value, icon, color, subtitle }) => (
     <div className="stat-card" style={{ '--accent-color': color }}>
         <span className="stat-label">{label}</span>
         <span className="stat-value">{value ?? '—'}</span>
         {subtitle && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{subtitle}</span>}
-        <span className="stat-icon"><Icon size={48} /></span>
+        <span className="stat-icon">{icon}</span>
     </div>
 );
 
@@ -25,6 +25,16 @@ const Analytics = () => {
         ? (((stats.totalNotes - stats.pendingNotes) / stats.totalNotes) * 100).toFixed(1)
         : 0;
 
+    const topRatedStudents = [...(stats?.topRatedUsers || [])].sort((a, b) => {
+        const avgDiff = Number(b.averageRating || 0) - Number(a.averageRating || 0);
+        if (avgDiff !== 0) return avgDiff;
+
+        const ratingCountDiff = Number(b.totalRatingsReceived || 0) - Number(a.totalRatingsReceived || 0);
+        if (ratingCountDiff !== 0) return ratingCountDiff;
+
+        return String(a.userName || '').localeCompare(String(b.userName || ''));
+    });
+
     return (
         <div className="page-container">
             <div className="page-header">
@@ -34,10 +44,10 @@ const Analytics = () => {
 
             {/* KPI cards */}
             <div className="grid-4" style={{ marginBottom: '2rem' }}>
-                <StatWidget label="Total Students" value={stats?.totalUsers} icon={Users} color="var(--primary)" subtitle="Registered accounts" />
-                <StatWidget label="Total Notes" value={stats?.totalNotes} icon={FileText} color="var(--info)" subtitle="All submitted notes" />
-                <StatWidget label="Pending Review" value={stats?.pendingNotes} icon={Clock} color="var(--warning)" subtitle="Awaiting admin action" />
-                <StatWidget label="Pending Approvals" value={stats?.pendingUsers} icon={AlertTriangle} color="var(--danger)" subtitle="Student accounts" />
+                <StatWidget label="Total Students" value={stats?.totalUsers} icon={<Users size={48} />} color="var(--primary)" subtitle="Registered accounts" />
+                <StatWidget label="Total Notes" value={stats?.totalNotes} icon={<FileText size={48} />} color="var(--info)" subtitle="All submitted notes" />
+                <StatWidget label="Pending Review" value={stats?.pendingNotes} icon={<Clock size={48} />} color="var(--warning)" subtitle="Awaiting admin action" />
+                <StatWidget label="Pending Approvals" value={stats?.pendingUsers} icon={<AlertTriangle size={48} />} color="var(--danger)" subtitle="Student accounts" />
             </div>
 
             <div className="grid-2" style={{ marginBottom: '2rem' }}>
@@ -127,6 +137,47 @@ const Analytics = () => {
                                         <td>{note.subject}</td>
                                         <td>{note.uploadedBy?.name || '—'}</td>
                                         <td><span className="badge badge-danger">{note.reportsCount}</span></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            <div className="card" style={{ marginTop: '1.5rem' }}>
+                <div className="card-header">
+                    <h3 className="card-title">Top Rated Users</h3>
+                    <span className="badge badge-success">
+                        {topRatedStudents.length} ranked
+                    </span>
+                </div>
+
+                {topRatedStudents.length === 0 ? (
+                    <div className="empty-state" style={{ padding: '2rem' }}>
+                        <Award size={32} className="empty-state-icon" />
+                        <p>No user ratings yet.</p>
+                    </div>
+                ) : (
+                    <div className="table-container">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student</th>
+                                    <th>Average Rating</th>
+                                    <th>Ratings Received</th>
+                                    <th>Rated PDFs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {topRatedStudents.map((item, index) => (
+                                    <tr key={item.userId || `${item.userName}-${index}`}>
+                                        <td style={{ color: 'var(--text-muted)' }}>{index + 1}</td>
+                                        <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{item.userName}</td>
+                                        <td><span className="badge badge-info">{Number(item.averageRating || 0).toFixed(2)} / 5</span></td>
+                                        <td>{item.totalRatingsReceived}</td>
+                                        <td>{item.ratedNotesCount}</td>
                                     </tr>
                                 ))}
                             </tbody>

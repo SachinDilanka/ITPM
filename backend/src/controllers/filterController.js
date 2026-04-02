@@ -1,4 +1,4 @@
-const Note = require('../models/Note');
+import Note from '../models/Note.js';
 
 const filterNotes = async (req, res) => {
     const { subject, semester, sortBy, status } = req.query;
@@ -18,4 +18,4 @@ const filterNotes = async (req, res) => {
     res.json(notes);
 };
 
-module.exports = { filterNotes };
+export { filterNotes };

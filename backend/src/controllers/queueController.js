@@ -1,5 +1,5 @@
-const Note = require('../models/Note');
-const { sortByPriority } = require('../services/priorityService');
+import Note from '../models/Note.js';
+import { sortByPriority } from '../services/priorityService.js';
 
 const getPendingQueue = async (req, res) => {
     const pendingNotes = await Note.find({ status: 'pending' }).populate('uploadedBy', 'name email');
@@ -7,4 +7,4 @@ const getPendingQueue = async (req, res) => {
     res.json(prioritized);
 };
 
-module.exports = { getPendingQueue };
+export { getPendingQueue };
