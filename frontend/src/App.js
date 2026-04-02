@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box } from '@mui/material';
 import { Navbar } from './components/Navbar.jsx';
+import Footer from './components/Footer.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Home from './pages/Home.jsx';
@@ -67,30 +68,35 @@ function App() {
         <Box sx={{ 
           minHeight: '100vh',
           background: 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%)',
-          color: '#fff'
+          color: '#fff',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
           <Router>
             <Navbar />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/questions" element={
-                <ProtectedRoute>
-                  <Questions />
-                </ProtectedRoute>
-              } />
-              <Route path="/polls" element={
-                <ProtectedRoute>
-                  <Polls />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-            </Routes>
+            <Box sx={{ flex: 1 }}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/questions" element={
+                  <ProtectedRoute>
+                    <Questions />
+                  </ProtectedRoute>
+                } />
+                <Route path="/polls" element={
+                  <ProtectedRoute>
+                    <Polls />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </Box>
+            <Footer />
           </Router>
         </Box>
       </AuthProvider>
