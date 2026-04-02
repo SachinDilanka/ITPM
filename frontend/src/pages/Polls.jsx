@@ -90,10 +90,15 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, Pie, Tooltip as RechartsTooltip, BarChart as RechartsBarChart, Bar, XAxis, YAxis } from 'recharts';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export const Polls = () => {
+  const { user } = useAuth();
   // Current user information (logged-in user)
-  const currentUser = { name: 'Shenali Rodrigo', avatar: 'SR', id: '60d5ecb74b24b81f6d8c4c5d' };
+  const currentUser = { name: user?.fullName || user?.username || 'User', avatar: user?.username?.charAt(0).toUpperCase() || 'U', id: user?._id };
+  
+  console.log('Current user:', currentUser);
+  console.log('Auth user:', user);
   
   const [openDialog, setOpenDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -457,9 +462,25 @@ export const Polls = () => {
   };
 
   const handleVote = (pollId, optionIndex) => {
+    console.log('handleVote called with:', { pollId, optionIndex });
+    
+    // Check if user is authenticated
+    if (!currentUser || !currentUser.id) {
+      console.error('User not authenticated or missing ID:', currentUser);
+      return;
+    }
+    
     // Prevent voting if poll is not active
     const poll = polls.find(p => p._id === pollId);
-    if (!poll || !poll.isActive) {
+    console.log('Found poll:', poll);
+    
+    if (!poll) {
+      console.error('Poll not found:', pollId);
+      return;
+    }
+    
+    if (!poll.isActive) {
+      console.warn('Poll is not active:', pollId);
       return;
     }
 
@@ -730,13 +751,10 @@ export const Polls = () => {
     setAnimationDirection('forward');
   };
 
-  // Store shuffled order to prevent position changes on re-render
-  const [shuffledOrder, setShuffledOrder] = React.useState(null);
-
-  // Reset shuffled order when switching tabs or when polls change significantly
+  // Debug expandedPoll changes
   React.useEffect(() => {
-    setShuffledOrder(null);
-  }, [filterTab, sortBy]);
+    console.log('expandedPoll changed to:', expandedPoll);
+  }, [expandedPoll]);
 
   // Filter and sort polls
   const filteredPolls = React.useMemo(() => {
@@ -758,12 +776,6 @@ export const Polls = () => {
         return isActive;
       });
       console.log('Active polls after filter:', filtered.length);
-    } else if (filterTab === 2) { // Ended only
-      filtered = filtered.filter(poll => {
-        const isEnded = poll.isActive === false || poll.isActive === 'false';
-        return isEnded;
-      });
-      console.log('Ended polls after filter:', filtered.length);
     }
     // For "All" tab (filterTab === 0), show both active and ended polls
     
@@ -779,29 +791,9 @@ export const Polls = () => {
       });
     }
     
-    // For "All" tab, use stable shuffle to prevent position changes
-    if (filterTab === 0) {
-      // Initialize shuffled order if not exists or if polls changed significantly
-      if (!shuffledOrder || shuffledOrder.length !== filtered.length) {
-        const newOrder = [...filtered];
-        // Simple shuffle algorithm - Fisher-Yates (only once)
-        for (let i = newOrder.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [newOrder[i], newOrder[j]] = [newOrder[j], newOrder[i]];
-        }
-        setShuffledOrder(newOrder);
-        return newOrder;
-      }
-      
-      // Maintain existing shuffled order, just update poll data
-      return shuffledOrder.map(shuffledPoll => 
-        filtered.find(poll => poll._id === shuffledPoll._id) || shuffledPoll
-      );
-    }
-    
     console.log('Final filtered polls count:', filtered.length, 'for tab:', filterTab);
     return filtered;
-  }, [polls, searchTerm, filterTab, sortBy, shuffledOrder]);
+  }, [polls, searchTerm, filterTab, sortBy]);
 
   // Separate active and ended polls
   const activePolls = React.useMemo(() => {
@@ -822,7 +814,10 @@ export const Polls = () => {
   };
 
   const togglePollExpansion = (pollId) => {
-    setExpandedPoll(expandedPoll === pollId ? null : pollId);
+    console.log('togglePollExpansion called with pollId:', pollId, 'current expandedPoll:', expandedPoll);
+    const newExpandedPoll = expandedPoll === pollId ? null : pollId;
+    console.log('Setting expandedPoll to:', newExpandedPoll);
+    setExpandedPoll(newExpandedPoll);
   };
 
   const deletePoll = (poll) => {
@@ -947,7 +942,6 @@ export const Polls = () => {
                 >
                   <Tab label="All" icon={<FileText size={18} />} iconPosition="start" />
                   <Tab label="Active" icon={<Clock size={18} />} iconPosition="start" />
-                  <Tab label="Ended" icon={<CheckCircle size={18} />} iconPosition="start" />
                 </Tabs>
               </Box>
             </Grid>
@@ -1088,19 +1082,21 @@ export const Polls = () => {
                   <CheckCircle size={24} />
                   Polls ({filteredPolls.length})
                 </Typography>
-                <Grid container spacing={3}>
+                <Grid container spacing={3} sx={{ position: 'relative', zIndex: 1 }}>
                   {filteredPolls.map((poll, index) => (
-              <Grid item xs={12} md={6} key={poll._id}>
+              <Grid item xs={12} md={6} lg={4} key={poll._id} sx={{ position: 'relative' }}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.3 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  style={{ position: 'relative', zIndex: 2 }}
                 >
                   <Card sx={{ 
-                    height: 'auto', 
+                    height: '100%', 
+                    minHeight: '600px',
                     display: 'flex', 
                     flexDirection: 'column',
                     background: 'linear-gradient(145deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%)',
@@ -1109,10 +1105,11 @@ export const Polls = () => {
                     position: 'relative',
                     overflow: 'hidden',
                     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-                    transition: 'all 0.2s ease-in-out',
+                    transition: 'all 0.3s ease-in-out',
+                    zIndex: 2,
                     '&:hover': { 
                       boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
-                      transform: 'translateY(-4px)',
+                      transform: 'translateY(-2px)',
                       borderColor: 'rgba(147, 51, 234, 0.5)',
                     },
                   }}>
@@ -1137,7 +1134,15 @@ export const Polls = () => {
                         />
                       </Box>
                     )}
-                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                    <CardContent sx={{ 
+                      flexGrow: 1, 
+                      p: 3, 
+                      position: 'relative',
+                      zIndex: 3,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 2
+                    }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 1.5 }}>
                         <motion.div
                           whileHover={{ scale: 1.1, rotate: 5 }}
@@ -1193,9 +1198,26 @@ export const Polls = () => {
                               fontSize: '0.75rem',
                               height: 28,
                               border: '1px solid rgba(255, 255, 255, 0.1)',
+                              userSelect: 'none',
+                              WebkitUserSelect: 'none',
+                              MozUserSelect: 'none',
+                              msUserSelect: 'none',
+                              WebkitTouchCallout: 'none',
                               '& .MuiChip-icon': {
                                 color: 'white',
                                 fontSize: '14px',
+                                userSelect: 'none',
+                                WebkitUserSelect: 'none',
+                                MozUserSelect: 'none',
+                                msUserSelect: 'none',
+                                WebkitTouchCallout: 'none',
+                              },
+                              '& .MuiChip-label': {
+                                userSelect: 'none',
+                                WebkitUserSelect: 'none',
+                                MozUserSelect: 'none',
+                                msUserSelect: 'none',
+                                WebkitTouchCallout: 'none',
                               },
                             }}
                           />
@@ -1249,8 +1271,10 @@ export const Polls = () => {
                             <motion.div
                               key={index}
                               initial={false}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
+                              {...(poll.isActive && {
+                                whileHover: { scale: 1.02 },
+                                whileTap: { scale: 0.98 }
+                              })}
                               animate={{
                                 scale: isAnimating ? [1, 1.05, 1] : 1,
                                 backgroundColor: isAnimating ? 'rgba(147, 51, 234, 0.1)' : 'transparent',
@@ -1265,7 +1289,7 @@ export const Polls = () => {
                                   p: 2.5,
                                   borderRadius: 2,
                                   backgroundColor: option.selected ? 'rgba(147, 51, 234, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                                  cursor: 'pointer',
+                                  cursor: poll.isActive ? 'pointer' : 'default',
                                   border: option.selected ? '2px solid transparent' : '1px solid rgba(255, 255, 255, 0.1)',
                                   backgroundImage: option.selected 
                                     ? 'linear-gradient(145deg, rgba(147, 51, 234, 0.1), rgba(236, 72, 153, 0.05))'
@@ -1273,14 +1297,16 @@ export const Polls = () => {
                                   position: 'relative',
                                   overflow: 'hidden',
                                   transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)',
-                                  '&:hover': { 
-                                    backgroundColor: option.selected ? 'rgba(147, 51, 234, 0.3)' : 'rgba(255, 255, 255, 0.08)',
-                                    transform: 'translateY(-2px) scale(1.02)',
-                                    border: option.selected ? '2px solid rgba(147, 51, 234, 0.6)' : '1px solid rgba(147, 51, 234, 0.3)',
-                                    boxShadow: option.selected ? 
-                                      '0 8px 32px rgba(147, 51, 234, 0.4), 0 0 0 1px rgba(147, 51, 234, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' : 
-                                      '0 4px 16px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(147, 51, 234, 0.1)',
-                                  },
+                                  ...(poll.isActive && {
+                                    '&:hover': { 
+                                      backgroundColor: option.selected ? 'rgba(147, 51, 234, 0.3)' : 'rgba(255, 255, 255, 0.08)',
+                                      transform: 'translateY(-2px) scale(1.02)',
+                                      border: option.selected ? '2px solid rgba(147, 51, 234, 0.6)' : '1px solid rgba(147, 51, 234, 0.3)',
+                                      boxShadow: option.selected ? 
+                                        '0 8px 32px rgba(147, 51, 234, 0.4), 0 0 0 1px rgba(147, 51, 234, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' : 
+                                        '0 4px 16px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(147, 51, 234, 0.1)',
+                                    },
+                                  }),
                                   '&::before': {
                                     content: '""',
                                     position: 'absolute',
@@ -1308,12 +1334,33 @@ export const Polls = () => {
                                     pointerEvents: 'none',
                                   },
                                 }}
-                                onClick={() => handleVote(poll._id, index)}
+                                onClick={(e) => {
+                                  if (!poll.isActive) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    return;
+                                  }
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Voting option clicked:', poll._id, index, 'Option:', option.text);
+                              handleVote(poll._id, index);
+                            }}
+                            onMouseDown={(e) => {
+                              if (!poll.isActive) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                return;
+                              }
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
                               >
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                   <motion.div
-                                    whileHover={{ scale: 1.15, rotate: 8 }}
-                                    whileTap={{ scale: 0.9 }}
+                                    {...(poll.isActive && {
+                                      whileHover: { scale: 1.15, rotate: 8 },
+                                      whileTap: { scale: 0.9 }
+                                    })}
                                     transition={{ type: "spring", stiffness: 400, damping: 10 }}
                                   >
                                     {poll.isMultipleChoice ? (
@@ -1412,8 +1459,10 @@ export const Polls = () => {
                               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flex: 1 }}>
                                   <motion.div
-                                    whileHover={{ scale: 1.05, y: -1 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    {...(poll.isActive && {
+                                      whileHover: { scale: 1.05, y: -1 },
+                                      whileTap: { scale: 0.95 }
+                                    })}
                                     transition={{ type: "spring", stiffness: 300 }}
                                   >
                                     <Box
@@ -1470,7 +1519,9 @@ export const Polls = () => {
                                       damping: 18,
                                       delay: 0.1 
                                     }}
-                                    whileHover={{ scale: 1.05 }}
+                                    {...(poll.isActive && {
+                                      whileHover: { scale: 1.05 }
+                                    })}
                                     style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)' }}
                                   >
                                     <Box
@@ -1568,7 +1619,15 @@ export const Polls = () => {
                       </Box>
 
                       {/* Enhanced Voting Interface & Live Results */}
-                      <Box sx={{ mt: 3, p: 3, background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.05))', borderRadius: 3, border: '1px solid rgba(147, 51, 234, 0.2)' }}>
+                      <Box sx={{ 
+                        mt: 3, 
+                        p: 3, 
+                        background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.05))', 
+                        borderRadius: 3, 
+                        border: '1px solid rgba(147, 51, 234, 0.2)',
+                        position: 'relative',
+                        zIndex: 4
+                      }}>
                         <Typography variant="h6" sx={{ 
                           fontWeight: 600, 
                           color: '#ffffff', 
@@ -1629,33 +1688,63 @@ export const Polls = () => {
                             )}
                           </Box>
                           
+                          <Box sx={{ position: 'relative', zIndex: 100, mt: 2, width: '100%' }}>
                           <Button
-                            size="small"
-                            variant="outlined"
+                            fullWidth
+                            variant="contained"
+                            size="large"
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
+                              console.log('Chart button clicked for poll:', poll._id);
                               togglePollExpansion(poll._id);
                             }}
-                            endIcon={expandedPoll === poll._id ? <ChevronUp size={16} /> : <PieChart size={16} />}
-                            sx={{ 
+                            startIcon={
+                              expandedPoll === poll._id ? (
+                                <ChevronUp size={24} />
+                              ) : (
+                                <PieChart size={24} />
+                              )
+                            }
+                            sx={{
                               textTransform: 'none',
-                              borderColor: 'rgba(147, 51, 234, 0.5)',
-                              color: '#9333ea',
-                              position: 'relative',
-                              zIndex: 2,
-                              pointerEvents: 'auto',
+                              fontSize: '1.1rem',
+                              fontWeight: 700,
+                              py: 2,
+                              px: 3,
+                              minHeight: '60px',
+                              background: expandedPoll === poll._id 
+                                ? 'linear-gradient(135deg, #1e40af, #3b82f6, #6366f1)' 
+                                : 'linear-gradient(135deg, #1f2937, #374151, #4b5563)',
+                              color: '#ffffff',
+                              border: '2px solid transparent',
+                              borderRadius: 3,
+                              boxShadow: expandedPoll === poll._id 
+                                ? '0 10px 30px rgba(59, 130, 246, 0.4)' 
+                                : '0 4px 15px rgba(0, 0, 0, 0.3)',
+                              cursor: 'pointer',
                               '&:hover': {
-                                borderColor: '#9333ea',
-                                backgroundColor: 'rgba(147, 51, 234, 0.1)'
+                                background: expandedPoll === poll._id 
+                                  ? 'linear-gradient(135deg, #1d4ed8, #2563eb, #4f46e5)' 
+                                  : 'linear-gradient(135deg, #374151, #4b5563, #6b7280)',
+                                boxShadow: expandedPoll === poll._id 
+                                  ? '0 15px 40px rgba(59, 130, 246, 0.5)' 
+                                  : '0 8px 25px rgba(0, 0, 0, 0.4)',
+                                transform: 'translateY(-2px)'
+                              },
+                              '&:active': {
+                                transform: 'translateY(0px)'
                               }
                             }}
                           >
-                            {expandedPoll === poll._id ? 'Hide' : 'Show'} Chart
+                            {expandedPoll === poll._id ? 'Hide Chart' : 'Show Chart'}
                           </Button>
+                        </Box>
                         </Box>
 
                         {/* Enhanced Pie Chart */}
                         <Collapse in={expandedPoll === poll._id}>
+                          {console.log('Chart collapse state for poll', poll._id, ':', expandedPoll === poll._id, 'expandedPoll:', expandedPoll)}
                           <Box sx={{ mt: 2 }}>
                             <Box sx={{ 
                               display: 'flex', 
@@ -1678,6 +1767,15 @@ export const Polls = () => {
                               </Typography>
                             </Box>
                             
+                            {(!poll.options || poll.options.length === 0) ? (
+                              <Box sx={{ textAlign: 'center', py: 4, color: '#94a3b8' }}>
+                                <Typography variant="body2">No options available for this poll</Typography>
+                              </Box>
+                            ) : (poll.totalVotes === 0) ? (
+                              <Box sx={{ textAlign: 'center', py: 4, color: '#94a3b8' }}>
+                                <Typography variant="body2">No votes yet. Be the first to vote!</Typography>
+                              </Box>
+                            ) : (
                             <Box sx={{ 
                               display: 'flex', 
                               gap: 3,
@@ -1686,15 +1784,20 @@ export const Polls = () => {
                             }}>
                               {/* Pie Chart */}
                               <Box sx={{ flex: 1, maxWidth: '280px' }}>
+                                {console.log('Rendering chart for poll', poll._id, 'with options:', poll.options)}
                                 <ResponsiveContainer width="100%" height={250} key={`enhanced-pie-chart-${poll._id}-${poll.totalVotes || 0}-${forceUpdate}-${Date.now()}`}>
                                   <RechartsPieChart>
                                     <Pie
-                                      data={(poll.options || []).map((opt, i) => ({
-                                        name: opt.text.length > 25 ? opt.text.substring(0, 25) + '...' : opt.text,
-                                        value: Array.isArray(opt.originalVotes) ? opt.originalVotes.length : (opt.votes || 0),
-                                        color: COLORS[i % COLORS.length],
-                                        percentage: poll.totalVotes > 0 ? Math.round(((Array.isArray(opt.originalVotes) ? opt.originalVotes.length : (opt.votes || 0)) / poll.totalVotes) * 100) : 0
-                                      }))}
+                                      data={(poll.options || []).map((opt, i) => {
+                                        const voteCount = Array.isArray(opt.originalVotes) ? opt.originalVotes.length : (opt.votes || 0);
+                                        console.log('Chart data for option', i, ':', opt.text, 'votes:', voteCount);
+                                        return {
+                                          name: opt.text.length > 25 ? opt.text.substring(0, 25) + '...' : opt.text,
+                                          value: voteCount,
+                                          color: COLORS[i % COLORS.length],
+                                          percentage: poll.totalVotes > 0 ? Math.round((voteCount / poll.totalVotes) * 100) : 0
+                                        };
+                                      })}
                                       cx="50%"
                                       cy="50%"
                                       innerRadius={60}
@@ -1743,7 +1846,7 @@ export const Polls = () => {
                                         key={index}
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.1 }}
+                                        transition={{ duration: 0.3 }}
                                         whileHover={{ scale: 1.02 }}
                                       >
                                         <Box sx={{ 
@@ -1809,6 +1912,7 @@ export const Polls = () => {
                                 </Box>
                               </Box>
                             </Box>
+                            )}
                           </Box>
                         </Collapse>
                       </Box>
@@ -1853,25 +1957,6 @@ export const Polls = () => {
                             </motion.div>
                           )}
                         </Box>
-                        <Button
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            togglePollExpansion(poll._id);
-                          }}
-                          endIcon={expandedPoll === poll._id ? <ChevronUp size={16} /> : <PieChart size={16} />}
-                          sx={{ 
-                            textTransform: 'none',
-                            position: 'relative',
-                            zIndex: 2,
-                            pointerEvents: 'auto',
-                            '&:hover': {
-                              backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                            }
-                          }}
-                        >
-                          {expandedPoll === poll._id ? 'Hide' : 'Show'} Chart
-                        </Button>
                       </Box>
                     </CardContent>
                     <CardActions sx={{ px: 2, pb: 2 }}>
@@ -1954,6 +2039,31 @@ export const Polls = () => {
                           disabled={!poll.isActive}
                           onCorrectionReceived={(correction) => {
                             console.log('AI Correction received for poll:', poll.title, correction);
+                            console.log('Poll details:', { 
+                              pollId: poll._id, 
+                              isActive: poll.isActive, 
+                              hasVoted: poll.hasVoted,
+                              optionsLength: poll.options?.length 
+                            });
+                            
+                            // If AI provided a specific correct answer (not -1), automatically select it
+                            if (correction.correctAnswer >= 0 && correction.correctAnswer < poll.options.length) {
+                              console.log('AI suggested answer:', correction.correctAnswer);
+                              
+                              // Check if user hasn't already voted
+                              if (!poll.hasVoted) {
+                                console.log('User has not voted, attempting to auto-vote...');
+                                // Automatically vote for the AI's suggested answer
+                                handleVote(poll._id, correction.correctAnswer);
+                                
+                                // Show success feedback (you could add a toast notification here)
+                                console.log(`AI selected Option ${correction.correctAnswer + 1}: ${poll.options[correction.correctAnswer].text || poll.options[correction.correctAnswer]}`);
+                              } else {
+                                console.log('User has already voted in this poll');
+                              }
+                            } else {
+                              console.log('AI did not provide a valid answer or answer is out of range');
+                            }
                           }}
                         />
                       </Box>

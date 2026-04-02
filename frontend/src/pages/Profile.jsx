@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -76,8 +77,11 @@ import {
   Delete
 } from '@mui/icons-material';
 import DeleteNotification, { DeleteConfirmNotification } from '../components/DeleteNotification.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export const Profile = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [editDialog, setEditDialog] = useState(false);
   const [settingsMenu, setSettingsMenu] = useState(null);
@@ -95,13 +99,25 @@ export const Profile = () => {
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [loadingFollowers, setLoadingFollowers] = useState(false);
   const [editFormData, setEditFormData] = useState({
-    fullName: 'Shenali Rodrigo',
-    username: 'shenalirodrigo',
-    email: 'shenali.rodrigo@university.edu',
-    bio: 'Computer Science student passionate about AI and machine learning. Love helping others solve complex problems!',
-    semester: '2nd Year',
-    branch: 'Computer Science'
+    fullName: user?.fullName || '',
+    username: user?.username || '',
+    email: user?.email || '',
+    bio: user?.bio || 'Computer Science student passionate about AI and machine learning. Love helping others solve complex problems!',
+    semester: user?.semester ? `Semester ${user.semester}` : '1st Year',
+    branch: user?.branch || 'Computer Science'
   });
+  const [userStats, setUserStats] = useState({
+    questionsAsked: 0,
+    bestAnswers: 0,
+    pollsCreated: 0,
+    totalLikes: 0,
+    totalShares: 0,
+    totalViews: 0
+  });
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [userQuestions, setUserQuestions] = useState([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   
   // Enhanced delete notification states
@@ -116,8 +132,8 @@ export const Profile = () => {
   const [deletedSharedItems, setDeletedSharedItems] = useState([]); // For undo functionality
 
   // Current user ID (this should come from auth context)
-  const currentUserId = '69c10289169fd1d0114d657d';
-  const currentUser = { id: currentUserId, name: 'Shenali Rodrigo', avatar: 'SR' };
+  const currentUserId = user?._id;
+  const currentUser = { id: currentUserId, name: user?.fullName || user?.username || 'User', avatar: user?.username?.charAt(0).toUpperCase() || 'U' };
 
   // Show snackbar function
   const showSnackbar = (message, severity = 'success') => {
@@ -689,85 +705,77 @@ export const Profile = () => {
     ));
   };
   
+  // Fetch user statistics when component mounts
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!currentUserId) {
+        console.log('No currentUserId found, user:', user);
+        return;
+      }
+      
+      try {
+        console.log('Fetching stats for userId:', currentUserId);
+        setStatsLoading(true);
+        const response = await axios.get(`http://localhost:5000/api/users/${currentUserId}/stats`);
+        
+        console.log('User stats response:', response.data);
+        setUserStats(response.data.stats);
+        setRecentActivity(response.data.recentActivity);
+        
+        // Update userProfile with real data
+        userProfile.followers = response.data.followers;
+        userProfile.following = response.data.following;
+        userProfile.reputation = response.data.reputation;
+        userProfile.stats = response.data.stats;
+        
+      } catch (error) {
+        console.error('Error fetching user statistics:', error);
+        console.error('Error response:', error.response?.data);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    const fetchUserQuestions = async () => {
+      if (!currentUserId) return;
+      
+      try {
+        setQuestionsLoading(true);
+        const response = await axios.get(`http://localhost:5000/api/users/${currentUserId}`);
+        
+        setUserQuestions(response.data.questions || []);
+        
+      } catch (error) {
+        console.error('Error fetching user questions:', error);
+        setUserQuestions([]);
+      } finally {
+        setQuestionsLoading(false);
+      }
+    };
+
+    fetchUserStats();
+    fetchUserQuestions();
+  }, [currentUserId]);
+
+  // Real user profile data
   const userProfile = {
-    id: 'currentUserId',
-    username: 'shenalirodrigo',
-    email: 'shenali.rodrigo@university.edu',
-    fullName: 'Shenali Rodrigo',
-    avatar: 'SR',
-    bio: 'Computer Science student passionate about AI and machine learning. Love helping others solve complex problems!',
-    semester: '2nd Year',
-    branch: 'Computer Science',
-    reputation: 245,
-    isVerified: true,
-    joinDate: '2026 March',
-    followers: 156,
-    following: 89,
-    stats: {
-      questionsAsked: 23,
-      answersProvided: 45,
-      bestAnswers: 12,
-      pollsCreated: 8,
-      totalLikes: 234,
-      totalShares: 45,
-      totalViews: 1250
-    },
-    achievements: [
-      { id: 1, name: 'First Question', description: 'Asked your first question', icon: '🎯', earned: true },
-      { id: 2, name: 'Helper', description: 'Provided 10 answers', icon: '🤝', earned: true },
-      { id: 3, name: 'Popular', description: 'Got 100 likes', icon: '⭐', earned: true },
-      { id: 4, name: 'Expert', description: 'Best answer 10 times', icon: '🏆', earned: false }
-    ],
+    id: user?._id || 'currentUserId',
+    username: user?.username || 'user',
+    email: user?.email || 'user@example.com',
+    fullName: user?.fullName || user?.username || 'User',
+    avatar: user?.username?.charAt(0).toUpperCase() || 'U',
+    bio: user?.bio || 'Computer Science student passionate about AI and machine learning. Love helping others solve complex problems!',
+    semester: user?.semester ? `Semester ${user.semester}` : '1st Year',
+    branch: user?.branch || 'Computer Science',
+    reputation: user?.reputation || 0,
+    isVerified: user?.isVerified || false,
+    joinDate: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : '2026 March',
+    followers: user?.followers?.length || 0,
+    following: user?.following?.length || 0,
+    stats: userStats,
     skills: ['JavaScript', 'React', 'Python', 'Machine Learning', 'Data Structures'],
     interests: ['AI', 'Web Development', 'Algorithms', 'Database Design']
   };
-
-  const recentActivity = [
-    {
-      id: 1,
-      type: 'question',
-      title: 'How to solve differential equations?',
-      timestamp: '2 hours ago',
-      points: '+15',
-      likes: 5,
-      comments: 3,
-      shares: 2,
-      tags: ['mathematics', 'calculus']
-    },
-    {
-      id: 2,
-      type: 'answer',
-      title: 'Answered: Physics lab report help needed',
-      timestamp: '5 hours ago',
-      points: '+25',
-      likes: 12,
-      comments: 1,
-      bestAnswer: true
-    }
-  ];
-
-  const userQuestions = [
-    {
-      id: 1,
-      title: 'How to solve differential equations?',
-      description: 'I\'m struggling with understanding the method...',
-      likes: 5,
-      comments: 3,
-      views: 45,
-      timestamp: '2 hours ago',
-      tags: ['mathematics', 'calculus']
-    },
-    {
-      id: 2,
-      title: 'Best resources for learning React?',
-      description: 'Looking for comprehensive learning materials...',
-      likes: 12,
-      comments: 8,
-      views: 120,
-      timestamp: '3 days ago',
-      tags: ['react', 'javascript', 'web-dev']
-    }
-  ];
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -925,7 +933,7 @@ export const Profile = () => {
 
       {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid xs={12} md={3}>
+        <Grid xs={12} md={4}>
           <Paper sx={{ 
             p: 3, 
             textAlign: 'center',
@@ -934,26 +942,14 @@ export const Profile = () => {
             '&:hover': { transform: 'translateY(-2px)', transition: 'all 0.3s ease' }
           }}>
             <QuestionAnswer sx={{ fontSize: 40, color: '#9333ea', mb: 1 }} />
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold' }}>{userProfile.stats.questionsAsked}</Typography>
+            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold' }}>
+              {statsLoading ? '...' : userProfile.stats.questionsAsked}
+            </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Questions Asked</Typography>
           </Paper>
         </Grid>
         
-        <Grid xs={12} md={3}>
-          <Paper sx={{ 
-            p: 3, 
-            textAlign: 'center',
-            background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)',
-            border: '1px solid rgba(236, 72, 153, 0.3)',
-            '&:hover': { transform: 'translateY(-2px)', transition: 'all 0.3s ease' }
-          }}>
-            <Comment sx={{ fontSize: 40, color: '#ec4899', mb: 1 }} />
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold' }}>{userProfile.stats.answersProvided}</Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Answers Provided</Typography>
-          </Paper>
-        </Grid>
-        
-        <Grid xs={12} md={3}>
+        <Grid xs={12} md={4}>
           <Paper sx={{ 
             p: 3, 
             textAlign: 'center',
@@ -962,12 +958,14 @@ export const Profile = () => {
             '&:hover': { transform: 'translateY(-2px)', transition: 'all 0.3s ease' }
           }}>
             <ThumbUp sx={{ fontSize: 40, color: '#4caf50', mb: 1 }} />
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold' }}>{userProfile.stats.totalLikes}</Typography>
+            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold' }}>
+              {statsLoading ? '...' : userProfile.stats.totalLikes}
+            </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Likes</Typography>
           </Paper>
         </Grid>
         
-        <Grid xs={12} md={3}>
+        <Grid xs={12} md={4}>
           <Paper sx={{ 
             p: 3, 
             textAlign: 'center',
@@ -976,7 +974,9 @@ export const Profile = () => {
             '&:hover': { transform: 'translateY(-2px)', transition: 'all 0.3s ease' }
           }}>
             <Poll sx={{ fontSize: 40, color: '#ff9800', mb: 1 }} />
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold' }}>{userProfile.stats.pollsCreated}</Typography>
+            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold' }}>
+              {statsLoading ? '...' : userProfile.stats.pollsCreated}
+            </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Polls Created</Typography>
           </Paper>
         </Grid>
@@ -1027,7 +1027,6 @@ export const Profile = () => {
           <Tab icon={<ShareIcon />} label="Shared" />
           <Tab icon={<PersonAdd />} label="Friends" />
           <Tab icon={<PersonAdd />} label="Followers" />
-          <Tab icon={<EmojiEvents />} label="Achievements" />
         </Tabs>
 
         {/* Tab Content */}
@@ -1046,31 +1045,43 @@ export const Profile = () => {
           {activeTab === 0 && (
             <Box>
               <Typography variant="h6" sx={{ color: '#fff', mb: 3 }}>Recent Activity</Typography>
-              <List>
-                {recentActivity.map((activity) => (
-                  <React.Fragment key={activity.id}>
-                    <ListItem sx={{ px: 0 }}>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {activity.type === 'question' && <QuestionAnswer sx={{ fontSize: 20, color: '#9333ea' }} />}
-                            {activity.type === 'answer' && <Comment sx={{ fontSize: 20, color: '#ec4899' }} />}
-                            {activity.type === 'poll' && <Poll sx={{ fontSize: 20, color: '#ff9800' }} />}
-                            <Typography variant="body1" component="span" sx={{ color: '#fff', fontWeight: 'medium' }}>
-                              {activity.title}
-                            </Typography>
-                          </Box>
-                        }
-                        secondary={
-                          <Box sx={{ mt: 1 }}>
-                            <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
-                              <Typography variant="caption" component="span" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-                                {activity.timestamp}
+              {statsLoading ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>Loading activity...</Typography>
+                </Box>
+              ) : recentActivity.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>No recent activity</Typography>
+                </Box>
+              ) : (
+                <List>
+                  {recentActivity.map((activity) => (
+                    <React.Fragment key={activity.id}>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {activity.type === 'question' && <QuestionAnswer sx={{ fontSize: 20, color: '#9333ea' }} />}
+                              {activity.type === 'answer' && <Comment sx={{ fontSize: 20, color: '#ec4899' }} />}
+                              {activity.type === 'poll' && <Poll sx={{ fontSize: 20, color: '#ff9800' }} />}
+                              <Typography variant="body1" component="span" sx={{ color: '#fff', fontWeight: 'medium' }}>
+                                {activity.title}
                               </Typography>
-                              {activity.points && (
-                                <Chip label={activity.points} size="small" sx={{ background: 'rgba(76, 175, 80, 0.2)', color: '#4caf50' }} />
-                              )}
                             </Box>
+                          }
+                          secondary={
+                            <Box sx={{ mt: 1 }}>
+                              <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                                <Typography variant="caption" component="span" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                                  {activity.timestamp}
+                                </Typography>
+                                {activity.points && (
+                                  <Chip label={activity.points} size="small" sx={{ background: 'rgba(76, 175, 80, 0.2)', color: '#4caf50' }} />
+                                )}
+                                {activity.bestAnswer && (
+                                  <Chip label="Best Answer" size="small" sx={{ background: 'rgba(255, 193, 7, 0.2)', color: '#ffc107' }} />
+                                )}
+                              </Box>
                             {activity.likes && (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <ThumbUp sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.5)' }} />
@@ -1096,52 +1107,86 @@ export const Profile = () => {
                   </React.Fragment>
                 ))}
               </List>
+              )}
             </Box>
           )}
 
           {activeTab === 1 && (
             <Box>
               <Typography variant="h6" sx={{ color: '#fff', mb: 3 }}>My Questions</Typography>
-              <Grid container spacing={2}>
-                {userQuestions.map((question) => (
-                  <Grid size={{ xs: 12 }} key={question.id}>
-                    <Paper sx={{ 
-                      p: 2, 
-                      background: 'rgba(147, 51, 234, 0.1)',
-                      border: '1px solid rgba(147, 51, 234, 0.3)',
-                      '&:hover': { background: 'rgba(147, 51, 234, 0.2)' }
-                    }}>
-                      <Typography variant="h6" sx={{ color: '#fff', mb: 1 }}>{question.title}</Typography>
-                      <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 2 }}>
-                        {question.description}
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <ThumbUp sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.5)' }} />
-                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-                            {question.likes}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Comment sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.5)' }} />
-                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-                            {question.comments}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Visibility sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.5)' }} />
-                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-                            {question.views}
-                          </Typography>
-                        </Box>
-                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', ml: 'auto' }}>
-                          {question.timestamp}
+              {questionsLoading ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>Loading questions...</Typography>
+                </Box>
+              ) : userQuestions.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>No questions asked yet</Typography>
+                  <Button 
+                    variant="contained" 
+                    sx={{ mt: 2 }}
+                    onClick={() => navigate('/questions')}
+                  >
+                    Ask Your First Question
+                  </Button>
+                </Box>
+              ) : (
+                <Grid container spacing={2}>
+                  {userQuestions.map((question) => (
+                    <Grid size={{ xs: 12 }} key={question._id}>
+                      <Paper sx={{ 
+                        p: 2, 
+                        background: 'rgba(147, 51, 234, 0.1)',
+                        border: '1px solid rgba(147, 51, 234, 0.3)',
+                        '&:hover': { background: 'rgba(147, 51, 234, 0.2)' }
+                      }}>
+                        <Typography variant="h6" sx={{ color: '#fff', mb: 1 }}>{question.title}</Typography>
+                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 2 }}>
+                          {question.content || question.description}
                         </Typography>
-                      </Box>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <ThumbUp sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.5)' }} />
+                            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                              {question.likes?.length || 0}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Comment sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.5)' }} />
+                            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                              {question.comments?.length || 0}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Visibility sx={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.5)' }} />
+                            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                              {question.views || 0}
+                            </Typography>
+                          </Box>
+                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                            {new Date(question.createdAt).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                        {question.tags && question.tags.length > 0 && (
+                          <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
+                            {question.tags.map((tag, index) => (
+                              <Chip 
+                                key={index} 
+                                label={tag} 
+                                size="small" 
+                                sx={{ 
+                                  background: 'rgba(147, 51, 234, 0.2)', 
+                                  color: '#9333ea',
+                                  fontSize: '0.7rem'
+                                }} 
+                              />
+                            ))}
+                          </Box>
+                        )}
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
             </Box>
           )}
 
@@ -1390,44 +1435,6 @@ export const Profile = () => {
           )}
 
           {activeTab === 3 && (
-            <Box>
-              <Typography variant="h6" sx={{ color: '#fff', mb: 3 }}>Achievements</Typography>
-              <Grid container spacing={2}>
-                {userProfile.achievements.map((achievement) => (
-                  <Grid size={{ xs: 12, md: 6 }} key={achievement.id}>
-                    <Paper sx={{ 
-                      p: 2, 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      gap: 2,
-                      background: achievement.earned 
-                        ? 'linear-gradient(145deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05))'
-                        : 'rgba(255, 255, 255, 0.05)',
-                      border: achievement.earned 
-                        ? '1px solid rgba(76, 175, 80, 0.3)'
-                        : '1px solid rgba(255, 255, 255, 0.1)',
-                      opacity: achievement.earned ? 1 : 0.6
-                    }}>
-                      <Typography variant="h3" sx={{ fontSize: 40 }}>{achievement.icon}</Typography>
-                      <Box>
-                        <Typography variant="subtitle1" sx={{ color: '#fff', fontWeight: 'bold' }}>
-                          {achievement.name}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                          {achievement.description}
-                        </Typography>
-                      </Box>
-                      {achievement.earned && (
-                        <CheckCircle sx={{ color: '#4caf50', ml: 'auto' }} />
-                      )}
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          )}
-
-          {activeTab === 4 && (
             <Box>
               <Typography variant="h6" sx={{ color: '#fff', mb: 3 }}>Friends</Typography>
               {loadingFriends ? (

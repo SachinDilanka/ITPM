@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const Question = require('../models/Question');
 const Answer = require('../models/Answer');
@@ -58,6 +59,17 @@ router.get('/', async function(req, res) {
   }
 });
 
+// Test endpoint
+router.get('/test', async function(req, res) {
+  try {
+    console.log('Test endpoint reached');
+    res.json({ message: 'Test endpoint working' });
+  } catch (error) {
+    console.error('Test endpoint error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get single question with answers
 router.get('/:id', async function(req, res) {
   try {
@@ -99,6 +111,7 @@ router.post('/', async function(req, res) {
     const description = req.body.description;
     const tags = req.body.tags;
     const semester = req.body.semester;
+    const academicYear = req.body.academicYear;
     const subject = req.body.subject;
     const module = req.body.module;
     const author = req.body.author;
@@ -123,6 +136,7 @@ router.post('/', async function(req, res) {
       description: description,
       tags: tagsArray,
       semester: semester,
+      academicYear: academicYear,
       subject: subject,
       module: module,
       author: author
@@ -156,12 +170,13 @@ router.put('/:id', async function(req, res) {
     }
     
     // Update question fields
-    const { title, description, tags, semester, subject, module } = req.body;
+    const { title, description, tags, semester, academicYear, subject, module } = req.body;
     
     if (title) question.title = title;
     if (description) question.description = description;
     if (tags) question.tags = Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim()).filter(tag => tag);
     if (semester !== undefined) question.semester = semester;
+    if (academicYear) question.academicYear = academicYear;
     if (subject) question.subject = subject;
     if (module) question.module = module;
     
@@ -263,24 +278,114 @@ router.delete('/:id/unshare', async (req, res) => {
 // Like/unlike question
 router.post('/:id/like', async function(req, res) {
   try {
+    console.log('=== LIKE REQUEST START ===');
+    console.log('User ID:', req.body.userId);
+    console.log('Question ID:', req.params.id);
+    
     const userId = req.body.userId;
-    const question = await Question.findById(req.params.id);
+    const questionId = req.params.id;
 
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    console.log('Step 1: Validating user ID format...');
+    // Validate userId format
+    let userObjectId;
+    try {
+      userObjectId = new mongoose.Types.ObjectId(userId);
+      console.log('User ID format is valid');
+    } catch (error) {
+      console.log('User ID format is invalid:', error.message);
+      return res.status(400).json({ message: 'Invalid User ID format' });
+    }
+
+    console.log('Step 2: Validating question ID format...');
+    // Validate questionId format
+    let questionObjectId;
+    try {
+      questionObjectId = new mongoose.Types.ObjectId(questionId);
+      console.log('Question ID format is valid');
+    } catch (error) {
+      console.log('Question ID format is invalid:', error.message);
+      return res.status(400).json({ message: 'Invalid Question ID format' });
+    }
+
+    console.log('Step 3: Getting MongoDB collections...');
+    // Get the raw MongoDB collection
+    const db = mongoose.connection.db;
+    const questionsCollection = db.collection('questions');
+    const usersCollection = db.collection('users');
+
+    console.log('Step 4: Checking if question exists...');
+    // Check if question exists
+    const question = await questionsCollection.findOne({ _id: questionObjectId });
     if (!question) {
+      console.log('Question not found');
       return res.status(404).json({ message: 'Question not found' });
     }
+    console.log('Question found:', question._id);
 
-    const likeIndex = question.likes.indexOf(userId);
+    console.log('Step 5: Checking if user already liked...');
+    // Check if user has already liked the question
+    const isLiked = question.likes && question.likes.some(likeId => likeId.toString() === userId);
+    console.log('Is liked:', isLiked);
+
+    console.log('Step 6: Preparing update operation...');
+    // Use $push or $pull based on current state
+    const updateOperation = isLiked 
+      ? { $pull: { likes: userObjectId } }
+      : { $push: { likes: userObjectId } };
+    console.log('Update operation:', updateOperation);
+
+    console.log('Step 7: Updating question...');
+    // Update using raw MongoDB operation
+    await questionsCollection.updateOne(
+      { _id: questionObjectId },
+      updateOperation
+    );
+    console.log('Question updated successfully');
+
+    console.log('Step 8: Fetching updated question...');
+    // Get the updated question using raw collection
+    const updatedQuestionRaw = await questionsCollection.findOne({ _id: questionObjectId });
+    console.log('Updated question fetched');
     
-    if (likeIndex > -1) {
-      question.likes.splice(likeIndex, 1);
-    } else {
-      question.likes.push(userId);
+    console.log('Step 9: Populating author...');
+    // Manually populate author if author field exists
+    let author = null;
+    if (updatedQuestionRaw.author) {
+      author = await usersCollection.findOne(
+        { _id: updatedQuestionRaw.author },
+        { projection: { username: 1, avatar: 1, reputation: 1 } }
+      );
     }
+    console.log('Author populated');
 
-    await question.save();
-    res.json({ likes: question.likes.length });
+    console.log('Step 10: Formatting response...');
+    // Format the response
+    const updatedQuestion = {
+      ...updatedQuestionRaw,
+      _id: updatedQuestionRaw._id.toString(),
+      author: author ? {
+        _id: author._id.toString(),
+        username: author.username,
+        avatar: author.avatar,
+        reputation: author.reputation
+      } : null
+    };
+    
+    console.log('Step 11: Sending response...');
+    console.log('=== LIKE REQUEST SUCCESS ===');
+    res.json({ 
+      question: updatedQuestion,
+      likes: updatedQuestion.likes ? updatedQuestion.likes.length : 0
+    });
   } catch (error) {
+    console.error('=== LIKE REQUEST ERROR ===');
+    console.error('Error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('============================');
     res.status(500).json({ message: error.message });
   }
 });

@@ -12,7 +12,7 @@ import {
   Chip,
   Avatar,
 } from '@mui/material';
-import { BookOpen, Users, TrendingUp, Brain, Sparkles, ArrowRight, Star, Zap, Target } from 'lucide-react';
+import { BookOpen, Users, TrendingUp, Brain, Sparkles, ArrowRight, Star, Zap, Target, Share2, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -21,6 +21,13 @@ export const Home = () => {
   const [hoveredFeature, setHoveredFeature] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [scrollY, setScrollY] = useState(0);
+  const [stats, setStats] = useState([
+    { label: 'Questions Asked', value: '...' },
+    { label: 'Answers Provided', value: '...' },
+    { label: 'Active Users', value: '...' },
+    { label: 'Topics Covered', value: '...' }
+  ]);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Track mouse movement for interactive effects
   useEffect(() => {
@@ -36,6 +43,32 @@ export const Home = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('scroll', handleScroll);
     };
+  }, []);
+
+  // Fetch real statistics data
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/statistics');
+        if (response.ok) {
+          const data = await response.json();
+          setStats([
+            { label: 'Questions Asked', value: data.questionsAsked.toLocaleString() },
+            { label: 'Answers Provided', value: data.answersProvided.toLocaleString() },
+            { label: 'Active Users', value: data.activeUsers.toLocaleString() },
+            { label: 'Topics Covered', value: data.topicsCovered.toLocaleString() }
+          ]);
+        } else {
+          console.error('Failed to fetch statistics');
+        }
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchStats();
   }, []);
 
   // Advanced animation variants
@@ -179,14 +212,23 @@ export const Home = () => {
       action: () => navigate('/questions'),
       badge: 'AI-Powered',
       color: '#f59e0b'
+    },
+    {
+      icon: <Share2 size={40} color="#10b981" />,
+      title: 'Note Sharing',
+      description: 'Share and access study notes from peers across different subjects',
+      action: () => navigate('/browse-notes'),
+      badge: 'Collaborative',
+      color: '#10b981'
+    },
+    {
+      icon: <MessageSquare size={40} color="#ef4444" />,
+      title: 'Rating and Feedbacks',
+      description: 'Rate content and provide feedback to improve the learning experience',
+      action: () => navigate('/questions'),
+      badge: 'Interactive',
+      color: '#ef4444'
     }
-  ];
-
-  const stats = [
-    { label: 'Questions Asked', value: '1,234' },
-    { label: 'Answers Provided', value: '5,678' },
-    { label: 'Active Users', value: '892' },
-    { label: 'Topics Covered', value: '156' }
   ];
 
   return (
@@ -466,7 +508,7 @@ export const Home = () => {
                       }}
                     >
                       <Typography variant="h3" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>
-                        {stat.value}
+                        {statsLoading ? '...' : stat.value}
                       </Typography>
                     </motion.div>
                     <Typography variant="body1" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>

@@ -30,6 +30,7 @@ const AICorrectionButton = ({ poll, onCorrectionReceived, disabled = false }) =>
   const [correction, setCorrection] = useState(null);
   const [error, setError] = useState(null);
   const [showResult, setShowResult] = useState(false);
+  const [answerSelected, setAnswerSelected] = useState(false);
 
   const handleAICorrection = async () => {
     setLoading(true);
@@ -55,7 +56,16 @@ const AICorrectionButton = ({ poll, onCorrectionReceived, disabled = false }) =>
       if (response.ok && data.success) {
         setCorrection(data.data);
         setShowResult(true);
-        onCorrectionReceived && onCorrectionReceived(data.data);
+        
+        // Call the callback and check if answer was selected
+        if (onCorrectionReceived) {
+          onCorrectionReceived(data.data);
+          
+          // Check if AI provided a valid answer and user hasn't voted
+          if (data.data.correctAnswer >= 0 && !poll.hasVoted) {
+            setAnswerSelected(true);
+          }
+        }
       } else {
         setError(data.error || 'Failed to get AI correction');
       }
@@ -87,74 +97,85 @@ const AICorrectionButton = ({ poll, onCorrectionReceived, disabled = false }) =>
   return (
     <Box>
       {/* AI Correction Button */}
-      <motion.div
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      <Tooltip 
+        title="AI will analyze the poll and automatically select the most likely correct answer for you"
+        arrow
+        placement="top"
       >
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={handleAICorrection}
-          disabled={disabled || loading}
-          startIcon={
-            loading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              >
+          <Button
+            variant="contained"
+            size="small"
+            fullWidth
+            onClick={handleAICorrection}
+            disabled={disabled || loading}
+            startIcon={
+              loading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  <Brain size={16} />
+                </motion.div>
+              ) : (
                 <Brain size={16} />
-              </motion.div>
-            ) : (
-              <Brain size={16} />
-            )
-          }
-          sx={{
-            borderColor: 'rgba(147, 51, 234, 0.5)',
-            color: '#9333ea',
-            background: 'linear-gradient(45deg, rgba(147, 51, 234, 0.05), rgba(236, 72, 153, 0.05))',
-            '&:hover': {
-              borderColor: '#9333ea',
-              background: 'linear-gradient(45deg, rgba(147, 51, 234, 0.1), rgba(236, 72, 153, 0.1))',
-              boxShadow: '0 4px 15px rgba(147, 51, 234, 0.3)',
-            },
-            '&:disabled': {
-              borderColor: 'rgba(147, 51, 234, 0.3)',
-              color: 'rgba(147, 51, 234, 0.5)',
-            },
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {loading ? 'AI Analyzing...' : 'AI Correction'}
-          
-          {/* Animated sparkles */}
-          {!loading && (
-            <motion.div
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              <motion.div
-                animate={{
-                  scale: [1, 1.5, 1],
-                  opacity: [0.8, 0.3, 0.8],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <Sparkles size={8} color="#9333ea" opacity={0.6} />
-              </motion.div>
-            </motion.div>
-          )}
-        </Button>
-      </motion.div>
+              )
+            }
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              py: 1.5,
+              px: 3,
+              minHeight: '40px',
+              minWidth: '100%',
+              width: '100%',
+              background: loading 
+                ? 'linear-gradient(45deg, #6366f1, #8b5cf6)' 
+                : 'linear-gradient(45deg, #ec4899, #f43f5e)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 1.5,
+              boxShadow: loading 
+                ? '0 2px 8px rgba(139, 92, 246, 0.3)' 
+                : '0 2px 8px rgba(236, 72, 153, 0.3)',
+              cursor: 'pointer',
+              pointerEvents: disabled || loading ? 'none' : 'auto',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none',
+              '&:hover': {
+                background: loading 
+                  ? 'linear-gradient(45deg, #4f46e5, #7c3aed)' 
+                  : 'linear-gradient(45deg, #db2777, #e11d48)',
+                boxShadow: loading 
+                  ? '0 4px 12px rgba(139, 92, 246, 0.4)' 
+                  : '0 4px 12px rgba(236, 72, 153, 0.4)',
+                transform: 'scale(1.02)'
+              },
+              '&:active': {
+                transform: 'scale(0.98)'
+              },
+              '&:disabled': {
+                background: 'linear-gradient(45deg, #6b7280, #9ca3af)',
+                color: 'rgba(255, 255, 255, 0.6)',
+                cursor: 'not-allowed',
+                boxShadow: 'none',
+                pointerEvents: 'none'
+              },
+              '& .MuiButton-startIcon': {
+                marginRight: '8px',
+                pointerEvents: 'none'
+              },
+              '& .MuiButton-label': {
+                pointerEvents: 'none'
+              }
+            }}
+          >
+            {loading ? 'AI Analyzing...' : 'AI Correct Answer'}
+          </Button>
+      </Tooltip>
 
       {/* Error Display */}
       <AnimatePresence>
@@ -274,26 +295,53 @@ const AICorrectionButton = ({ poll, onCorrectionReceived, disabled = false }) =>
                     <Paper
                       sx={{
                         p: 2,
-                        background: 'linear-gradient(45deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.1))',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        background: answerSelected 
+                          ? 'linear-gradient(45deg, rgba(16, 185, 129, 0.2), rgba(34, 197, 94, 0.2))'
+                          : 'linear-gradient(45deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.1))',
+                        border: answerSelected 
+                          ? '2px solid rgba(16, 185, 129, 0.5)'
+                          : '1px solid rgba(16, 185, 129, 0.3)',
                         borderRadius: 1,
+                        position: 'relative',
                       }}
                     >
+                      {answerSelected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 500 }}
+                          style={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -10,
+                            background: 'linear-gradient(45deg, #10b981, #059669)',
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
+                          }}
+                        >
+                          ✓ Selected
+                        </motion.div>
+                      )}
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <motion.div
                           animate={{
-                            scale: [1, 1.2, 1],
+                            scale: answerSelected ? [1, 1.3, 1] : [1, 1.2, 1],
                           }}
                           transition={{
-                            duration: 1,
-                            repeat: Infinity,
+                            duration: answerSelected ? 0.8 : 1,
+                            repeat: answerSelected ? 3 : Infinity,
                             ease: "easeInOut"
                           }}
                         >
-                          <CheckCircle size={16} color="#10b981" />
+                          <CheckCircle size={16} color={answerSelected ? "#059669" : "#10b981"} />
                         </motion.div>
-                        <Typography variant="body1" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                        <Typography variant="body1" sx={{ color: answerSelected ? "#059669" : '#10b981', fontWeight: 'bold' }}>
                           Option {correction.correctAnswer + 1}
+                          {answerSelected && ' - Automatically Selected'}
                         </Typography>
                       </Box>
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -302,6 +350,11 @@ const AICorrectionButton = ({ poll, onCorrectionReceived, disabled = false }) =>
                           'Option not available'
                         }
                       </Typography>
+                      {answerSelected && (
+                        <Typography variant="caption" color="#10b981" sx={{ mt: 1, display: 'block', fontWeight: 'bold' }}>
+                          AI has automatically selected this answer for you!
+                        </Typography>
+                      )}
                     </Paper>
                   </Box>
                 </motion.div>

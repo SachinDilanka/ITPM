@@ -4,10 +4,14 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box } from '@mui/material';
 import { Navbar } from './components/Navbar.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Home from './pages/Home.jsx';
 import Questions from './pages/Questions.jsx';
 import Polls from './pages/Polls.jsx';
 import Profile from './pages/Profile.jsx';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
 
 const theme = createTheme({
   palette: {
@@ -59,21 +63,37 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ 
-        minHeight: '100vh',
-        background: 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%)',
-        color: '#fff'
-      }}>
-        <Router>
-          <Navbar />
-          <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/questions" element={<Questions />} />
-          <Route path="/polls" element={<Polls />} />
-          <Route path="/profile" element={<Profile />} />
-        </Routes>
-        </Router>
-      </Box>
+      <AuthProvider>
+        <Box sx={{ 
+          minHeight: '100vh',
+          background: 'linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%)',
+          color: '#fff'
+        }}>
+          <Router>
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/questions" element={
+                <ProtectedRoute>
+                  <Questions />
+                </ProtectedRoute>
+              } />
+              <Route path="/polls" element={
+                <ProtectedRoute>
+                  <Polls />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </Router>
+        </Box>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

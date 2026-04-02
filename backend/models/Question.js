@@ -31,9 +31,10 @@ const questionSchema = new mongoose.Schema({
   },
   academicYear: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
-    enum: ['1st Year', '2nd Year', '3rd Year', '4th Year']
+    enum: ['1st Year', '2nd Year', '3rd Year', '4th Year'],
+    default: '2nd Year'
   },
   subject: {
     type: String,

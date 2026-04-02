@@ -59,10 +59,27 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import DeleteNotification, { DeleteConfirmNotification } from '../components/DeleteNotification.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+
+// Add CSS animations
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 const Questions = () => {
+  const { user } = useAuth();
   // Current user (using actual logged-in user info)
-  const currentUser = { id: '69c10289169fd1d0114d657d', name: 'Shenali Rodrigo', avatar: 'SR' };
+  const currentUser = { id: user?._id, name: user?.fullName || user?.username || 'User', avatar: user?.username?.charAt(0).toUpperCase() || 'U' };
   
   const [questions, setQuestions] = useState([]);
   const [filteredQuestions, setFilteredQuestions] = useState([]);
@@ -255,7 +272,7 @@ const Questions = () => {
                   size="small"
                   onClick={() => onLikeComment(questionId, comment.id)}
                   sx={{
-                    color: Array.isArray(comment.likes) && comment.likes.includes(currentUser.id) ? '#9333ea' : 'rgba(255, 255, 255, 0.5)',
+                    color: Array.isArray(comment.likes) && comment.likes.some(likeId => likeId.toString() === currentUser.id) ? '#9333ea' : 'rgba(255, 255, 255, 0.5)',
                     '&:hover': { color: '#9333ea' },
                     fontSize: '12px',
                     p: 0.5
@@ -322,14 +339,24 @@ const Questions = () => {
     views: question.views || 0,
     // Convert semester number back to display format
     semester: question.semester === 1 ? '1st Semester' : question.semester === 2 ? '2nd Semester' : question.semester,
-    // Include year if provided (for new questions)
-    year: includeYear || question.year,
+    // Map academicYear from backend to year field for frontend consistency
+    year: includeYear || question.academicYear || question.year || '2nd Year',
     // Format author object if it's populated
     author: question.author && typeof question.author === 'object' ? question.author : { id: question.author, name: 'Unknown', avatar: 'U' }
   });
 
   const applyFilters = useCallback(() => {
-    let filtered = questions.map(q => normalizeQuestion(q));
+    let filtered = questions.map(q => ({
+      ...q,
+      // Only normalize non-critical fields, preserve likes and other dynamic data
+      tags: Array.isArray(q.tags) ? q.tags : (q.tags ? q.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []),
+      sharedBy: Array.isArray(q.sharedBy) ? q.sharedBy : (q.sharedBy ? [q.sharedBy] : []),
+      comments: Array.isArray(q.comments) ? q.comments : (q.comments ? q.comments : []),
+      semester: q.semester === 1 ? '1st Semester' : q.semester === 2 ? '2nd Semester' : q.semester,
+      // Map academicYear to year for filtering
+      year: q.academicYear || q.year || '2nd Year',
+      author: q.author && typeof q.author === 'object' ? q.author : { id: q.author, name: 'Unknown', avatar: 'U' }
+    }));
     
     if (searchTerm && searchTerm.trim()) {
       filtered = filtered.filter(q => 
@@ -364,17 +391,14 @@ const Questions = () => {
       const response = await axios.get('http://localhost:5000/api/questions');
       console.log('Successfully fetched questions:', response.data.questions?.length || 0, 'questions');
       
-      // Preserve existing comments and share counts when updating questions
-      const normalizedQuestions = response.data.questions.map(q => {
-        const existingQuestion = questions.find(eq => eq._id === q._id);
-        const existingFilteredQuestion = filteredQuestions.find(fq => fq._id === q._id);
-        return normalizeQuestion({
+      // Normalize questions without preserving existing state to avoid stale data
+      const normalizedQuestions = response.data.questions.map(q => 
+        normalizeQuestion({
           ...q,
-          comments: existingQuestion?.comments || existingFilteredQuestion?.comments || [],
-          shares: existingQuestion?.shares || existingFilteredQuestion?.shares || q.shares || 0,
-          sharedBy: existingQuestion?.sharedBy || existingFilteredQuestion?.sharedBy || q.sharedBy || []
-        }, existingQuestion?.year || existingFilteredQuestion?.year || '2nd Year'); // Default year for existing questions
-      });
+          academicYear: q.academicYear || '2nd Year' // Ensure academicYear has a default
+        })
+      );
+      
       setQuestions(normalizedQuestions);
       setFilteredQuestions(normalizedQuestions);
 
@@ -418,60 +442,55 @@ const Questions = () => {
     } catch (error) {
       console.error('Error fetching questions from backend:', error);
       // Only fallback to mock data if we have no data at all
-      if (questions.length === 0 && filteredQuestions.length === 0) {
-        console.log('Falling back to mock data...');
-        const mockQuestions = [
-          {
-            _id: 1,
-            title: "How to solve differential equations?",
-            description: "I'm struggling with understanding the method for solving first-order differential equations.",
-            year: "2nd Year",
-            semester: "1st Semester",
-            subject: "Mathematics",
-            module: "Calculus II",
-            tags: ["differential-equations", "calculus", "math"],
-            author: { id: 'user1', name: "John Doe", avatar: "JD" },
-            likes: ['user2', 'user3'],
-            views: 45,
-            aiHighlighted: true,
-            comments: [
-              { id: 1, author: { id: 'user2', name: "Jane Smith", avatar: "JS" }, text: "Have you tried separation of variables method?", timestamp: "2 hours ago", likes: [] },
-              { id: 2, author: { id: 'user3', name: "Mike Johnson", avatar: "MJ" }, text: "Check out Khan Academy's videos on this topic", timestamp: "1 hour ago", likes: ['user2'] }
-            ],
-            shares: 3,
-            sharedBy: ['user4', 'user5'],
-            createdAt: "3 hours ago"
-          },
-          {
-            _id: 2,
-            title: "Physics lab report help needed",
-            description: "Need help with writing the conclusion section for my pendulum experiment.",
-            year: "1st Year",
-            semester: "2nd Semester",
-            subject: "Physics",
-            module: "Mechanics",
-            tags: ["physics", "lab-report", "pendulum"],
-            author: { id: 'user2', name: "Jane Smith", avatar: "JS" },
-            likes: ['user1'],
-            views: 23,
-            aiHighlighted: false,
-            comments: [
-              { id: 3, author: { id: 'user1', name: "John Doe", avatar: "JD" }, text: "Make sure to include error analysis", timestamp: "30 minutes ago", likes: [] }
-            ],
-            shares: 1,
-            sharedBy: ['user3'],
-            createdAt: "5 hours ago"
-          }
-        ];
-        const normalizedMockQuestions = mockQuestions.map(q => normalizeQuestion(q));
-        setQuestions(normalizedMockQuestions);
-        setFilteredQuestions(normalizedMockQuestions);
-        showSnackbar('Running in demo mode - backend not available', 'info');
-      } else {
-        showSnackbar('Backend temporarily unavailable - showing cached data', 'warning');
-      }
+      const mockQuestions = [
+        {
+          _id: 1,
+          title: "How to solve differential equations?",
+          description: "I'm struggling with understanding the method for solving first-order differential equations.",
+          year: "2nd Year",
+          semester: "1st Semester",
+          subject: "Mathematics",
+          module: "Calculus II",
+          tags: ["differential-equations", "calculus", "math"],
+          author: { id: 'user1', name: "John Doe", avatar: "JD" },
+          likes: ['user2', 'user3'],
+          views: 45,
+          aiHighlighted: true,
+          comments: [
+            { id: 1, author: { id: 'user2', name: "Jane Smith", avatar: "JS" }, text: "Have you tried separation of variables method?", timestamp: "2 hours ago", likes: [] },
+            { id: 2, author: { id: 'user3', name: "Mike Johnson", avatar: "MJ" }, text: "Check out Khan Academy's videos on this topic", timestamp: "1 hour ago", likes: ['user2'] }
+          ],
+          shares: 3,
+          sharedBy: ['user4', 'user5'],
+          createdAt: "3 hours ago"
+        },
+        {
+          _id: 2,
+          title: "Physics lab report help needed",
+          description: "Need help with writing the conclusion section for my pendulum experiment.",
+          year: "1st Year",
+          semester: "2nd Semester",
+          subject: "Physics",
+          module: "Mechanics",
+          tags: ["physics", "lab-report", "pendulum"],
+          author: { id: 'user2', name: "Jane Smith", avatar: "JS" },
+          likes: ['user1'],
+          views: 23,
+          aiHighlighted: false,
+          comments: [
+            { id: 3, author: { id: 'user1', name: "John Doe", avatar: "JD" }, text: "Make sure to include error analysis", timestamp: "30 minutes ago", likes: [] }
+          ],
+          shares: 1,
+          sharedBy: ['user3'],
+          createdAt: "5 hours ago"
+        }
+      ];
+      const normalizedMockQuestions = mockQuestions.map(q => normalizeQuestion(q));
+      setQuestions(normalizedMockQuestions);
+      setFilteredQuestions(normalizedMockQuestions);
+      showSnackbar('Running in demo mode - backend not available', 'info');
     }
-  }, [questions, filteredQuestions, showSnackbar]);
+  }, [currentUser.id, showSnackbar]);
 
   useEffect(() => {
     fetchQuestions();
@@ -496,6 +515,7 @@ const Questions = () => {
         description: formData.description,
         tags: formData.tags,
         semester: formData.semester === '1st Semester' ? 1 : 2,
+        academicYear: formData.year,
         subject: formData.subject,
         module: formData.module,
         author: currentUser.id
@@ -766,12 +786,13 @@ const Questions = () => {
       const updateLikes = (questions) => questions.map(q => {
         if (q._id === questionId) {
           const likes = Array.isArray(q.likes) ? q.likes : [];
-          const isLiked = likes.includes(currentUser.id);
+          const isLiked = likes.some(likeId => likeId.toString() === currentUser.id);
+          const updatedLikes = isLiked 
+            ? likes.filter(id => id.toString() !== currentUser.id)
+            : [...likes, currentUser.id];
           return {
             ...q,
-            likes: isLiked 
-              ? likes.filter(id => id !== currentUser.id)
-              : [...likes, currentUser.id]
+            likes: updatedLikes
           };
         }
         return q;
@@ -785,20 +806,21 @@ const Questions = () => {
 
     // Handle real data with API call
     try {
-      await axios.post(`http://localhost:5000/api/questions/${questionId}/like`, {
+      const response = await axios.post(`http://localhost:5000/api/questions/${questionId}/like`, {
         userId: currentUser.id
       });
       
-      // Update local state to preserve comments in both questions and filteredQuestions
+      console.log('Like API response:', response.data);
+      
+      // Use the updated question data from backend response
+      const updatedQuestion = response.data.question || response.data;
+      
+      // Update local state with backend data to ensure consistency
       const updateLikes = (questions) => questions.map(q => {
         if (q._id === questionId) {
-          const likes = Array.isArray(q.likes) ? q.likes : [];
-          const isLiked = likes.includes(currentUser.id);
           return {
             ...q,
-            likes: isLiked 
-              ? likes.filter(id => id !== currentUser.id)
-              : [...likes, currentUser.id]
+            likes: Array.isArray(updatedQuestion.likes) ? updatedQuestion.likes : q.likes
           };
         }
         return q;
@@ -812,12 +834,13 @@ const Questions = () => {
       const updateLikes = (questions) => questions.map(q => {
         if (q._id === questionId) {
           const likes = Array.isArray(q.likes) ? q.likes : [];
-          const isLiked = likes.includes(currentUser.id);
+          const isLiked = likes.some(likeId => likeId.toString() === currentUser.id);
+          const updatedLikes = isLiked 
+            ? likes.filter(id => id.toString() !== currentUser.id)
+            : [...likes, currentUser.id];
           return {
             ...q,
-            likes: isLiked 
-              ? likes.filter(id => id !== currentUser.id)
-              : [...likes, currentUser.id]
+            likes: updatedLikes
           };
         }
         return q;
@@ -1120,12 +1143,13 @@ const Questions = () => {
           comments: (q.comments || []).map(c => {
             if (c.id === commentId) {
               const likes = Array.isArray(c.likes) ? c.likes : [];
-              const isLiked = likes.includes(currentUser.id);
+              const isLiked = likes.some(likeId => likeId.toString() === currentUser.id);
+              const updatedLikes = isLiked 
+                ? likes.filter(id => id.toString() !== currentUser.id)
+                : [...likes, currentUser.id];
               return {
                 ...c,
-                likes: isLiked 
-                  ? likes.filter(id => id !== currentUser.id)
-                  : [...likes, currentUser.id]
+                likes: updatedLikes
               };
             }
             return c;
@@ -1440,7 +1464,7 @@ const Questions = () => {
           </Box>
         </Box>
 
-        {/* Enhanced Year Selection */}
+        {/* Enhanced Year Selection - Modern Card Design */}
         <Box mb={3}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography 
@@ -1478,82 +1502,118 @@ const Questions = () => {
             </Typography>
           </Box>
           
-          <ToggleButtonGroup
-            value={filterYear}
-            exclusive
-            onChange={(e, newValue) => setFilterYear(newValue || '')}
-            sx={{ 
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 1,
-              '& .MuiToggleButtonGroup-root': {
-                borderRadius: 2
-              }
-            }}
-          >
-            {years.map((year, index) => (
-              <ToggleButton
-                key={year}
-                value={year}
-                sx={{
-                  px: 3,
-                  py: 1.5,
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  borderColor: 'rgba(147, 51, 234, 0.3)',
-                  borderRadius: 2,
-                  m: 0.5,
-                  transition: 'all 0.3s ease',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  '&:before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: -100,
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(45deg, #9333ea, #ec4899)',
-                    transition: 'left 0.3s ease',
-                    zIndex: 0
-                  },
-                  '&.Mui-selected': {
-                    background: 'linear-gradient(45deg, #9333ea, #ec4899)',
-                    color: '#fff',
-                    borderColor: '#9333ea',
-                    '&:before': {
-                      left: 0
-                    },
-                    '&:after': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
-                      transform: 'translateX(0%)',
-                      transition: 'transform 0.6s ease',
-                      zIndex: 1
-                    }
-                  },
-                  '&:hover': {
-                    borderColor: '#9333ea',
-                    background: 'rgba(147, 51, 234, 0.1)',
-                    '&:before': {
-                      left: 0
-                    }
-                  }
-                }}
-              >
-                <Box sx={{ position: 'relative', zIndex: 2 }}>
-                  {year}
-                </Box>
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
+          <Grid container spacing={2}>
+            {years.map((year, index) => {
+              const yearNumbers = {
+                '1st Year': '01',
+                '2nd Year': '02', 
+                '3rd Year': '03',
+                '4th Year': '04'
+              };
+              
+              return (
+                <Grid item xs={6} sm={3} key={year}>
+                  <Card
+                    onClick={() => setFilterYear(filterYear === year ? '' : year)}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      border: filterYear === year 
+                        ? '2px solid #9333ea' 
+                        : '1px solid rgba(147, 51, 234, 0.3)',
+                      background: filterYear === year
+                        ? 'linear-gradient(135deg, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.1))'
+                        : 'rgba(255, 255, 255, 0.05)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 3,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: filterYear === year
+                          ? '0 8px 25px rgba(147, 51, 234, 0.4)'
+                          : '0 8px 25px rgba(147, 51, 234, 0.2)',
+                        border: '2px solid #9333ea',
+                        '& .year-number': {
+                          color: '#9333ea',
+                          transform: 'scale(1.1)'
+                        },
+                        '& .year-text': {
+                          color: '#fff'
+                        }
+                      },
+                      '&:before': filterYear === year ? {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '3px',
+                        background: 'linear-gradient(90deg, #9333ea, #ec4899)',
+                        animation: 'shimmer 2s infinite'
+                      } : {}
+                    }}
+                  >
+                    <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography
+                        className="year-number"
+                        variant="h3"
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: '2rem',
+                          background: filterYear === year
+                            ? 'linear-gradient(45deg, #9333ea, #ec4899)'
+                            : 'linear-gradient(45deg, rgba(147, 51, 234, 0.7), rgba(236, 72, 153, 0.5))',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          mb: 1,
+                          transition: 'all 0.3s ease',
+                          lineHeight: 1
+                        }}
+                      >
+                        {yearNumbers[year]}
+                      </Typography>
+                      <Typography
+                        className="year-text"
+                        variant="body2"
+                        sx={{
+                          color: filterYear === year ? '#fff' : 'rgba(255, 255, 255, 0.7)',
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        {year}
+                      </Typography>
+                      {filterYear === year && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(45deg, #9333ea, #ec4899)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            animation: 'pulse 2s infinite'
+                          }}
+                        >
+                          <CheckCircle sx={{ fontSize: 16, color: '#fff' }} />
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
         </Box>
 
-        {/* Enhanced Semester Selection */}
+        {/* Enhanced Semester Selection - Modern Card Design */}
         <Box mb={3}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography 
@@ -1591,70 +1651,113 @@ const Questions = () => {
             </Typography>
           </Box>
           
-          <ToggleButtonGroup
-            value={filterSemester}
-            exclusive
-            onChange={(e, newValue) => setFilterSemester(newValue || '')}
-            sx={{ 
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 1,
-              '& .MuiToggleButtonGroup-root': {
-                borderRadius: 2
-              }
-            }}
-          >
-            {semesters.map((semester, index) => (
-              <ToggleButton
-                key={semester}
-                value={semester}
-                sx={{
-                  px: 3,
-                  py: 1.5,
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  borderColor: 'rgba(236, 72, 153, 0.3)',
-                  borderRadius: 2,
-                  m: 0.5,
-                  transition: 'all 0.3s ease',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  '&:before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: -100,
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(45deg, #ec4899, #db2777)',
-                    transition: 'left 0.3s ease',
-                    zIndex: 0
-                  },
-                  '&.Mui-selected': {
-                    background: 'linear-gradient(45deg, #ec4899, #db2777)',
-                    color: '#fff',
-                    borderColor: '#ec4899',
-                    transform: 'scale(1.05)',
-                    boxShadow: '0 4px 15px rgba(236, 72, 153, 0.4)',
-                    '&:before': {
-                      left: 0
-                    }
-                  },
-                  '&:hover': {
-                    borderColor: '#ec4899',
-                    background: 'rgba(236, 72, 153, 0.1)',
-                    transform: 'scale(1.02)',
-                    '&:before': {
-                      left: 0
-                    }
-                  }
-                }}
-              >
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
-                  {semester}
-                </Box>
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
+          <Grid container spacing={2}>
+            {semesters.map((semester, index) => {
+              const semesterNumbers = {
+                '1st Semester': '01',
+                '2nd Semester': '02'
+              };
+              
+              return (
+                <Grid item xs={6} sm={3} key={semester}>
+                  <Card
+                    onClick={() => setFilterSemester(filterSemester === semester ? '' : semester)}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      border: filterSemester === semester 
+                        ? '2px solid #ec4899' 
+                        : '1px solid rgba(236, 72, 153, 0.3)',
+                      background: filterSemester === semester
+                        ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(219, 39, 119, 0.1))'
+                        : 'rgba(255, 255, 255, 0.05)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 3,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: filterSemester === semester
+                          ? '0 8px 25px rgba(236, 72, 153, 0.4)'
+                          : '0 8px 25px rgba(236, 72, 153, 0.2)',
+                        border: '2px solid #ec4899',
+                        '& .semester-number': {
+                          color: '#ec4899',
+                          transform: 'scale(1.1)'
+                        },
+                        '& .semester-text': {
+                          color: '#fff'
+                        }
+                      },
+                      '&:before': filterSemester === semester ? {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '3px',
+                        background: 'linear-gradient(90deg, #ec4899, #db2777)',
+                        animation: 'shimmer 2s infinite'
+                      } : {}
+                    }}
+                  >
+                    <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography
+                        className="semester-number"
+                        variant="h3"
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: '2rem',
+                          background: filterSemester === semester
+                            ? 'linear-gradient(45deg, #ec4899, #db2777)'
+                            : 'linear-gradient(45deg, rgba(236, 72, 153, 0.7), rgba(219, 39, 119, 0.5))',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          mb: 1,
+                          transition: 'all 0.3s ease',
+                          lineHeight: 1
+                        }}
+                      >
+                        {semesterNumbers[semester]}
+                      </Typography>
+                      <Typography
+                        className="semester-text"
+                        variant="body2"
+                        sx={{
+                          color: filterSemester === semester ? '#fff' : 'rgba(255, 255, 255, 0.7)',
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        {semester}
+                      </Typography>
+                      {filterSemester === semester && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(45deg, #ec4899, #db2777)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            animation: 'pulse 2s infinite'
+                          }}
+                        >
+                          <CheckCircle sx={{ fontSize: 16, color: '#fff' }} />
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
         </Box>
 
         {/* Interactive Subject Selection */}
@@ -1913,7 +2016,7 @@ const Questions = () => {
 
         {/* Search and Quick Filters */}
         <Grid container spacing={3} alignItems="flex-start">
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <TextField
               fullWidth
               placeholder="🔍 Search questions, topics, or keywords..."
@@ -2215,7 +2318,7 @@ const Questions = () => {
                       handleLike(question._id);
                     }}
                     sx={{
-                      color: Array.isArray(question.likes) && question.likes.includes(currentUser.id) ? '#9333ea' : 'rgba(255, 255, 255, 0.5)',
+                      color: Array.isArray(question.likes) && question.likes.some(likeId => likeId.toString() === currentUser.id) ? '#9333ea' : 'rgba(255, 255, 255, 0.5)',
                       '&:hover': { color: '#9333ea' }
                     }}
                   >
@@ -2542,10 +2645,13 @@ const Questions = () => {
           <DialogContent sx={{ 
             color: '#fff',
             maxHeight: 'calc(90vh - 120px)',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            position: 'relative',
+            zIndex: 1,
+            pointerEvents: 'auto'
           }}>
             <Grid container spacing={3}>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   fullWidth
                   label="Question Title"
@@ -2553,6 +2659,9 @@ const Questions = () => {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   helperText="Be specific and imagine you're asking a question to another person"
                   sx={{
+                    position: 'relative',
+                    zIndex: 1,
+                    pointerEvents: 'auto',
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: 'rgba(147, 51, 234, 0.3)'
                     },
@@ -2566,13 +2675,20 @@ const Questions = () => {
                       color: 'rgba(255, 255, 255, 0.7)'
                     },
                     '& .MuiInputBase-input': {
-                      color: '#fff'
+                      color: '#fff',
+                      pointerEvents: 'auto'
+                    },
+                    '& .MuiOutlinedInput-root': {
+                      pointerEvents: 'auto'
+                    },
+                    '& .MuiFormControl-root': {
+                      pointerEvents: 'auto'
                     }
                   }}
                 />
               </Grid>
               
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   fullWidth
                   label="Description"
@@ -2581,11 +2697,38 @@ const Questions = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   helperText="Include all the information someone would need to answer your question"
+                  sx={{
+                    position: 'relative',
+                    zIndex: 1,
+                    pointerEvents: 'auto',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(147, 51, 234, 0.3)'
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(147, 51, 234, 0.5)'
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#9333ea'
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    '& .MuiInputBase-input': {
+                      color: '#fff',
+                      pointerEvents: 'auto'
+                    },
+                    '& .MuiOutlinedInput-root': {
+                      pointerEvents: 'auto'
+                    },
+                    '& .MuiFormControl-root': {
+                      pointerEvents: 'auto'
+                    }
+                  }}
                 />
               </Grid>
 
               {/* Interactive Year Selection */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Typography variant="subtitle1" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 2 }}>
                   <School sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Select Year
@@ -2625,7 +2768,7 @@ const Questions = () => {
               </Grid>
 
               {/* Interactive Semester Selection */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Typography variant="subtitle1" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 2 }}>
                   <CalendarToday sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Select Semester
@@ -2664,7 +2807,7 @@ const Questions = () => {
               </Grid>
 
               {/* Interactive Subject Selection */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle1" sx={{ 
                     color: 'rgba(255, 255, 255, 0.8)', 
@@ -2691,7 +2834,7 @@ const Questions = () => {
                   </Typography>
                   
                   {/* Interactive Subject Selection */}
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <Box sx={{ mb: 3 }}>
                       <FormControl fullWidth variant="outlined">
                         <InputLabel 
@@ -2919,7 +3062,7 @@ const Questions = () => {
               </Grid>
 
               {/* Module Field */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   fullWidth
                   label="Module"
@@ -2927,6 +3070,9 @@ const Questions = () => {
                   onChange={(e) => setFormData({ ...formData, module: e.target.value })}
                   helperText="Specify the module or topic (e.g., Calculus II, Mechanics, Organic Chemistry)"
                   sx={{
+                    position: 'relative',
+                    zIndex: 1,
+                    pointerEvents: 'auto',
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: 'rgba(147, 51, 234, 0.3)'
                     },
@@ -2940,16 +3086,23 @@ const Questions = () => {
                       color: 'rgba(255, 255, 255, 0.7)'
                     },
                     '& .MuiInputBase-input': {
-                      color: '#fff'
+                      color: '#fff',
+                      pointerEvents: 'auto'
                     },
                     '& .MuiFormHelperText-root': {
                       color: 'rgba(255, 255, 255, 0.5)'
+                    },
+                    '& .MuiOutlinedInput-root': {
+                      pointerEvents: 'auto'
+                    },
+                    '& .MuiFormControl-root': {
+                      pointerEvents: 'auto'
                     }
                   }}
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   fullWidth
                   label="Tags (comma separated)"
@@ -2957,6 +3110,9 @@ const Questions = () => {
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                   helperText="Add tags to help others find your question (e.g., calculus, physics, exam)"
                   sx={{
+                    position: 'relative',
+                    zIndex: 1,
+                    pointerEvents: 'auto',
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: 'rgba(147, 51, 234, 0.3)'
                     },
@@ -2970,10 +3126,17 @@ const Questions = () => {
                       color: 'rgba(255, 255, 255, 0.7)'
                     },
                     '& .MuiInputBase-input': {
-                      color: '#fff'
+                      color: '#fff',
+                      pointerEvents: 'auto'
                     },
                     '& .MuiFormHelperText-root': {
                       color: 'rgba(255, 255, 255, 0.5)'
+                    },
+                    '& .MuiOutlinedInput-root': {
+                      pointerEvents: 'auto'
+                    },
+                    '& .MuiFormControl-root': {
+                      pointerEvents: 'auto'
                     }
                   }}
                 />

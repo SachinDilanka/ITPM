@@ -8,6 +8,7 @@ const pollsRouter = require('./routes/polls');
 const usersRouter = require('./routes/users');
 const commentsRouter = require('./routes/comments');
 const aiRouter = require('./routes/ai');
+const statisticsRouter = require('./routes/statistics');
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/polls', pollsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/comments', commentsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/statistics', statisticsRouter);
 
 // Error handling middleware for async routes
 app.use((err, req, res, next) => {

@@ -375,7 +375,7 @@ const BeautifulPollCreator = ({
                   </Typography>
                   <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
                     {years.map((year, index) => (
-                      <Grid item key={year}>
+                      <Box key={year}>
                         <motion.div
                           initial={{ opacity: 0, scale: 0.8, y: 20 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -388,6 +388,12 @@ const BeautifulPollCreator = ({
                           }}
                           whileTap={{ scale: 0.95, rotateZ: -2 }}
                           onClick={() => handleFieldChange('year', year)}
+                          style={{
+                            position: 'relative',
+                            cursor: 'pointer',
+                            width: '100%',
+                            height: '100%'
+                          }}
                           sx={{
                             p: 3,
                             borderRadius: 3,
@@ -406,6 +412,8 @@ const BeautifulPollCreator = ({
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'center',
+                            userSelect: 'none',
+                            pointerEvents: 'all',
                             '&:hover': {
                               borderColor: '#10b981',
                               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1))',
@@ -420,9 +428,25 @@ const BeautifulPollCreator = ({
                               height: '100%',
                               background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
                               transition: 'all 0.8s',
+                              pointerEvents: 'none',
                             },
                             '&:hover::before': {
                               left: '100%',
+                            },
+                            '& > *': {
+                              pointerEvents: 'none !important',
+                            },
+                            '& div': {
+                              pointerEvents: 'none !important',
+                            },
+                            '& span': {
+                              pointerEvents: 'none !important',
+                            },
+                            '& svg': {
+                              pointerEvents: 'none !important',
+                            },
+                            '& p': {
+                              pointerEvents: 'none !important',
                             }
                           }}
                         >
@@ -443,7 +467,8 @@ const BeautifulPollCreator = ({
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 zIndex: 2,
-                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                                pointerEvents: 'none'
                               }}
                             >
                               <Check size={16} color="#10b981" />
@@ -455,6 +480,7 @@ const BeautifulPollCreator = ({
                               scale: pollData.year === year ? [1, 1.05, 1] : 1
                             }}
                             transition={{ duration: 2, repeat: pollData.year === year ? Infinity : 0 }}
+                            style={{ pointerEvents: 'none' }}
                           >
                             <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1, fontSize: '2rem' }}>
                               {year}
@@ -473,7 +499,7 @@ const BeautifulPollCreator = ({
                             </Typography>
                           </motion.div>
                         </motion.div>
-                      </Grid>
+                      </Box>
                     ))}
                   </Box>
                   {formErrors.year && (
@@ -522,7 +548,7 @@ const BeautifulPollCreator = ({
                   </Typography>
                   <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
                     {semesters.map((semester, index) => (
-                      <Grid item key={semester}>
+                      <Box key={semester}>
                         <motion.div
                           initial={{ opacity: 0, x: -30, rotateY: 90 }}
                           animate={{ opacity: 1, x: 0, rotateY: 0 }}
@@ -535,6 +561,12 @@ const BeautifulPollCreator = ({
                           }}
                           whileTap={{ scale: 0.95, rotateY: -5 }}
                           onClick={() => handleFieldChange('semester', semester)}
+                          style={{
+                            position: 'relative',
+                            cursor: 'pointer',
+                            width: '100%',
+                            height: '100%'
+                          }}
                           sx={{
                             p: 3,
                             borderRadius: 3,
@@ -554,6 +586,8 @@ const BeautifulPollCreator = ({
                             flexDirection: 'column',
                             justifyContent: 'center',
                             perspective: '1000px',
+                            userSelect: 'none',
+                            pointerEvents: 'all',
                             '&:hover': {
                               borderColor: '#3b82f6',
                               background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1))',
@@ -568,10 +602,26 @@ const BeautifulPollCreator = ({
                               height: '200%',
                               background: 'radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%)',
                               transition: 'all 0.8s',
+                              pointerEvents: 'none',
                             },
                             '&:hover::before': {
                               top: '-25%',
                               left: '-25%',
+                            },
+                            '& > *': {
+                              pointerEvents: 'none !important',
+                            },
+                            '& div': {
+                              pointerEvents: 'none !important',
+                            },
+                            '& span': {
+                              pointerEvents: 'none !important',
+                            },
+                            '& svg': {
+                              pointerEvents: 'none !important',
+                            },
+                            '& p': {
+                              pointerEvents: 'none !important',
                             }
                           }}
                         >
@@ -592,7 +642,8 @@ const BeautifulPollCreator = ({
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 zIndex: 2,
-                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                                pointerEvents: 'none'
                               }}
                             >
                               <Check size={16} color="#3b82f6" />
@@ -604,6 +655,7 @@ const BeautifulPollCreator = ({
                               rotateZ: pollData.semester === semester ? [0, 2, 0] : 0
                             }}
                             transition={{ duration: 2.5, repeat: pollData.semester === semester ? Infinity : 0 }}
+                            style={{ pointerEvents: 'none' }}
                           >
                             <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1, fontSize: '2rem' }}>
                               {semester}
@@ -616,7 +668,7 @@ const BeautifulPollCreator = ({
                             </Typography>
                           </motion.div>
                         </motion.div>
-                      </Grid>
+                      </Box>
                     ))}
                   </Box>
                   {formErrors.semester && (
@@ -696,6 +748,12 @@ const BeautifulPollCreator = ({
                         }}
                         whileTap={{ scale: 0.95, rotateX: -5 }}
                         onClick={() => handleFieldChange('subject', subject)}
+                        style={{
+                          position: 'relative',
+                          cursor: 'pointer',
+                          width: '100%',
+                          height: '100%'
+                        }}
                         sx={{
                           p: 2.5,
                           borderRadius: 2.5,
@@ -717,6 +775,8 @@ const BeautifulPollCreator = ({
                           flexDirection: 'column',
                           justifyContent: 'center',
                           perspective: '1000px',
+                          userSelect: 'none',
+                          pointerEvents: 'all',
                           '&:hover': {
                             borderColor: '#f59e0b',
                             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.1))',
@@ -733,6 +793,7 @@ const BeautifulPollCreator = ({
                               ? 'linear-gradient(90deg, #f59e0b, #d97706)' 
                               : 'transparent',
                             transition: 'all 0.3s ease',
+                            pointerEvents: 'none',
                           },
                           '&::before': {
                             content: '""',
@@ -746,9 +807,25 @@ const BeautifulPollCreator = ({
                               : 'transparent',
                             transform: 'translateX(-100%)',
                             transition: 'transform 0.6s',
+                            pointerEvents: 'none',
                           },
                           '&:hover::before': {
                             transform: 'translateX(100%)',
+                          },
+                          '& > *': {
+                            pointerEvents: 'none !important',
+                          },
+                          '& div': {
+                            pointerEvents: 'none !important',
+                          },
+                          '& span': {
+                            pointerEvents: 'none !important',
+                          },
+                          '& svg': {
+                            pointerEvents: 'none !important',
+                          },
+                          '& p': {
+                            pointerEvents: 'none !important',
                           }
                         }}
                       >
@@ -769,7 +846,8 @@ const BeautifulPollCreator = ({
                               alignItems: 'center',
                               justifyContent: 'center',
                               zIndex: 2,
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                                pointerEvents: 'none'
                             }}
                           >
                             <Check size={14} color="#f59e0b" />
@@ -783,6 +861,7 @@ const BeautifulPollCreator = ({
                             scale: pollData.subject === subject ? [1, 1.05, 1] : 1
                           }}
                           transition={{ duration: 2, repeat: pollData.subject === subject ? Infinity : 0 }}
+                          style={{ pointerEvents: 'none' }}
                         >
                           <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 0.5 }}>
                             {subject === 'Introduction to Programming' && '💻'}

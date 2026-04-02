@@ -36,14 +36,17 @@ import {
   Menu as MenuIcon,
   Close,
   Book,
-  BarChart
+  BarChart,
+  Login as LoginIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export const Navbar = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout, isAuthenticated } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,6 +57,12 @@ export const Navbar = () => {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleClose();
+    navigate('/');
   };
 
   const menuItems = [
@@ -176,39 +185,75 @@ export const Navbar = () => {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <IconButton sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              <Notifications />
-            </IconButton>
+            {isAuthenticated ? (
+              <>
+                <IconButton sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  <Notifications />
+                </IconButton>
 
-            <IconButton sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              <Chat />
-            </IconButton>
+                <IconButton sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  <Chat />
+                </IconButton>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar 
-                sx={{ 
-                  bgcolor: '#9333ea',
-                  width: 40,
-                  height: 40,
-                  cursor: 'pointer',
-                  border: '2px solid rgba(147, 51, 234, 0.5)',
-                  '&:hover': {
-                    border: '2px solid #9333ea'
-                  }
-                }}
-                onClick={handleMenu}
-              >
-                SR
-              </Avatar>
-              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold' }}>
-                  Shenali Rodrigo
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Student
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar 
+                    sx={{ 
+                      bgcolor: '#9333ea',
+                      width: 40,
+                      height: 40,
+                      cursor: 'pointer',
+                      border: '2px solid rgba(147, 51, 234, 0.5)',
+                      '&:hover': {
+                        border: '2px solid #9333ea'
+                      }
+                    }}
+                    onClick={handleMenu}
+                  >
+                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                  </Avatar>
+                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold' }}>
+                      {user?.fullName || user?.username || 'User'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      {user?.branch || 'Student'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </>
+            ) : (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<LoginIcon />}
+                  onClick={() => navigate('/login')}
+                  sx={{
+                    borderColor: 'rgba(147, 51, 234, 0.5)',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    '&:hover': {
+                      borderColor: '#9333ea',
+                      background: 'rgba(147, 51, 234, 0.1)',
+                      color: '#fff'
+                    }
+                  }}
+                >
+                  Login
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate('/register')}
+                  sx={{
+                    background: 'linear-gradient(45deg, #9333ea, #ec4899)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #7c3aed, #db2777)',
+                      boxShadow: '0 4px 15px rgba(147, 51, 234, 0.3)'
+                    }
+                  }}
+                >
+                  Sign Up
+                </Button>
               </Box>
-            </Box>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
@@ -241,7 +286,7 @@ export const Navbar = () => {
           Settings
         </MenuItem>
         <Divider sx={{ borderColor: 'rgba(147, 51, 234, 0.3)' }} />
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={handleLogout}>
           <Logout sx={{ mr: 2 }} />
           Logout
         </MenuItem>
@@ -330,7 +375,7 @@ export const Navbar = () => {
             fullWidth
             variant="outlined"
             startIcon={<Logout />}
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={handleLogout}
             sx={{
               borderColor: 'rgba(147, 51, 234, 0.5)',
               color: 'rgba(255, 255, 255, 0.7)',
