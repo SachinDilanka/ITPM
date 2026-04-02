@@ -10,6 +10,14 @@ const axiosInstance = axios.create({
 // Request interceptor – attach JWT token from localStorage
 axiosInstance.interceptors.request.use(
     (config) => {
+        // Default JSON Content-Type makes axios stringify FormData as JSON — multer then sees no file
+        if (config.data instanceof FormData && config.headers) {
+            if (typeof config.headers.delete === 'function') {
+                config.headers.delete('Content-Type');
+            } else {
+                delete config.headers['Content-Type'];
+            }
+        }
         const userInfo = localStorage.getItem('userInfo');
         if (userInfo) {
             const { token } = JSON.parse(userInfo);
