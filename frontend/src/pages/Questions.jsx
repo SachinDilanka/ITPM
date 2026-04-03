@@ -1513,100 +1513,66 @@ const Questions = () => {
               
               return (
                 <Grid item xs={6} sm={3} key={year}>
-                  <Card
-                    onClick={() => setFilterYear(filterYear === year ? '' : year)}
+                  <Box
+                    onClick={() => {
+                      console.log('Filter year card clicked:', year);
+                      setFilterYear(filterYear === year ? '' : year);
+                    }}
                     sx={{
                       cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      padding: 2,
                       border: filterYear === year 
                         ? '2px solid #9333ea' 
                         : '1px solid rgba(147, 51, 234, 0.3)',
                       background: filterYear === year
                         ? 'linear-gradient(135deg, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.1))'
                         : 'rgba(255, 255, 255, 0.05)',
-                      backdropFilter: 'blur(10px)',
                       borderRadius: 3,
-                      position: 'relative',
-                      overflow: 'hidden',
+                      textAlign: 'center',
+                      transition: 'all 0.3s ease',
                       '&:hover': {
                         transform: 'translateY(-4px)',
-                        boxShadow: filterYear === year
-                          ? '0 8px 25px rgba(147, 51, 234, 0.4)'
-                          : '0 8px 25px rgba(147, 51, 234, 0.2)',
-                        border: '2px solid #9333ea',
-                        '& .year-number': {
-                          color: '#9333ea',
-                          transform: 'scale(1.1)'
-                        },
-                        '& .year-text': {
-                          color: '#fff'
-                        }
-                      },
-                      '&:before': filterYear === year ? {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '3px',
-                        background: 'linear-gradient(90deg, #9333ea, #ec4899)',
-                        animation: 'shimmer 2s infinite'
-                      } : {}
+                        boxShadow: '0 8px 25px rgba(147, 51, 234, 0.3)',
+                        border: '2px solid #9333ea'
+                      }
                     }}
                   >
-                    <CardContent sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography
-                        className="year-number"
-                        variant="h3"
-                        sx={{
-                          fontWeight: 800,
-                          fontSize: '2rem',
-                          background: filterYear === year
-                            ? 'linear-gradient(45deg, #9333ea, #ec4899)'
-                            : 'linear-gradient(45deg, rgba(147, 51, 234, 0.7), rgba(236, 72, 153, 0.5))',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                          mb: 1,
-                          transition: 'all 0.3s ease',
-                          lineHeight: 1
-                        }}
-                      >
-                        {yearNumbers[year]}
-                      </Typography>
-                      <Typography
-                        className="year-text"
-                        variant="body2"
-                        sx={{
-                          color: filterYear === year ? '#fff' : 'rgba(255, 255, 255, 0.7)',
-                          fontWeight: 600,
-                          fontSize: '0.875rem',
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        {year}
-                      </Typography>
-                      {filterYear === year && (
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            background: 'linear-gradient(45deg, #9333ea, #ec4899)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            animation: 'pulse 2s infinite'
-                          }}
-                        >
-                          <CheckCircle sx={{ fontSize: 16, color: '#fff' }} />
-                        </Box>
-                      )}
-                    </CardContent>
-                  </Card>
+                    <Typography
+                      className="year-number"
+                      variant="h3"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: '2rem',
+                        background: filterYear === year
+                          ? 'linear-gradient(45deg, #ffffff, #f0f0f0)'
+                          : 'linear-gradient(45deg, #9333ea, #ec4899)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        textFillColor: 'transparent',
+                        color: 'transparent',
+                        mb: 1,
+                        transition: 'all 0.3s ease',
+                        textShadow: filterYear === year 
+                          ? '0 2px 4px rgba(147, 51, 234, 0.3)'
+                          : '0 2px 4px rgba(255, 255, 255, 0.2)',
+                        letterSpacing: '2px'
+                      }}
+                    >
+                      {yearNumbers[year]}
+                    </Typography>
+                    <Typography
+                      className="year-text"
+                      variant="caption" 
+                      sx={{ 
+                        color: filterYear === year ? '#fff' : 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.75rem',
+                        mt: 0.5
+                      }}
+                    >
+                      {year}
+                    </Typography>
+                  </Box>
                 </Grid>
               );
             })}
@@ -1660,100 +1626,63 @@ const Questions = () => {
               
               return (
                 <Grid item xs={6} sm={3} key={semester}>
-                  <Card
-                    onClick={() => setFilterSemester(filterSemester === semester ? '' : semester)}
+                  <Box
+                    onClick={() => {
+                      console.log('Filter semester card clicked:', semester);
+                      setFilterSemester(filterSemester === semester ? '' : semester);
+                    }}
                     sx={{
                       cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      padding: 2,
                       border: filterSemester === semester 
                         ? '2px solid #ec4899' 
                         : '1px solid rgba(236, 72, 153, 0.3)',
                       background: filterSemester === semester
                         ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(219, 39, 119, 0.1))'
                         : 'rgba(255, 255, 255, 0.05)',
-                      backdropFilter: 'blur(10px)',
                       borderRadius: 3,
-                      position: 'relative',
-                      overflow: 'hidden',
+                      textAlign: 'center',
+                      transition: 'all 0.3s ease',
                       '&:hover': {
                         transform: 'translateY(-4px)',
-                        boxShadow: filterSemester === semester
-                          ? '0 8px 25px rgba(236, 72, 153, 0.4)'
-                          : '0 8px 25px rgba(236, 72, 153, 0.2)',
-                        border: '2px solid #ec4899',
-                        '& .semester-number': {
-                          color: '#ec4899',
-                          transform: 'scale(1.1)'
-                        },
-                        '& .semester-text': {
-                          color: '#fff'
-                        }
-                      },
-                      '&:before': filterSemester === semester ? {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '3px',
-                        background: 'linear-gradient(90deg, #ec4899, #db2777)',
-                        animation: 'shimmer 2s infinite'
-                      } : {}
+                        boxShadow: '0 8px 25px rgba(236, 72, 153, 0.3)',
+                        border: '2px solid #ec4899'
+                      }
                     }}
                   >
-                    <CardContent sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography
-                        className="semester-number"
-                        variant="h3"
-                        sx={{
-                          fontWeight: 800,
-                          fontSize: '2rem',
-                          background: filterSemester === semester
-                            ? 'linear-gradient(45deg, #ec4899, #db2777)'
-                            : 'linear-gradient(45deg, rgba(236, 72, 153, 0.7), rgba(219, 39, 119, 0.5))',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                          mb: 1,
-                          transition: 'all 0.3s ease',
-                          lineHeight: 1
-                        }}
-                      >
-                        {semesterNumbers[semester]}
-                      </Typography>
-                      <Typography
-                        className="semester-text"
-                        variant="body2"
-                        sx={{
-                          color: filterSemester === semester ? '#fff' : 'rgba(255, 255, 255, 0.7)',
-                          fontWeight: 600,
-                          fontSize: '0.875rem',
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        {semester}
-                      </Typography>
-                      {filterSemester === semester && (
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            background: 'linear-gradient(45deg, #ec4899, #db2777)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            animation: 'pulse 2s infinite'
-                          }}
-                        >
-                          <CheckCircle sx={{ fontSize: 16, color: '#fff' }} />
-                        </Box>
-                      )}
-                    </CardContent>
-                  </Card>
+                    <Typography
+                      className="semester-number"
+                      variant="h3"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: '2rem',
+                        background: filterSemester === semester
+                          ? 'linear-gradient(45deg, #ec4899, #db2777)'
+                          : 'linear-gradient(45deg, rgba(236, 72, 153, 0.7), rgba(219, 39, 119, 0.5))',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        textFillColor: 'transparent',
+                        mb: 1,
+                        transition: 'all 0.3s ease',
+                        lineHeight: 1
+                      }}
+                    >
+                      {semesterNumbers[semester]}
+                    </Typography>
+                    <Typography
+                      className="semester-text"
+                      variant="body2"
+                      sx={{
+                        color: filterSemester === semester ? '#fff' : 'rgba(255, 255, 255, 0.7)',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      {semester}
+                    </Typography>
+                  </Box>
                 </Grid>
               );
             })}
@@ -2727,84 +2656,209 @@ const Questions = () => {
                 />
               </Grid>
 
-              {/* Interactive Year Selection */}
-              <Grid xs={12}>
-                <Typography variant="subtitle1" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 2 }}>
-                  <School sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Select Year
-                </Typography>
-                <ToggleButtonGroup
-                  value={formData.year}
-                  exclusive
-                  onChange={(e, newValue) => setFormData({ ...formData, year: newValue || '' })}
-                  sx={{ mb: 2 }}
-                >
-                  {years.map((year) => (
-                    <ToggleButton
-                      key={year}
-                      value={year}
-                      required
-                      onClick={() => setFormData({ ...formData, year: year })}
-                      sx={{
-                        px: 3,
-                        py: 1,
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        borderColor: 'rgba(147, 51, 234, 0.3)',
-                        '&.Mui-selected': {
-                          background: 'linear-gradient(45deg, #9333ea, #ec4899)',
-                          color: '#fff',
-                          borderColor: '#9333ea'
-                        },
-                        '&:hover': {
-                          borderColor: '#9333ea',
-                          background: 'rgba(147, 51, 234, 0.1)'
-                        }
+              {/* Enhanced Year Selection - Modern Card Design */}
+        <Box mb={3}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                color: 'rgba(255, 255, 255, 0.8)', 
+                mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              <School sx={{ 
+                mr: 1, 
+                verticalAlign: 'middle',
+                color: '#9333ea',
+                fontSize: 20
+              }} />
+              Academic Year
+              {formData.year && (
+                <Chip 
+                  label={formData.year}
+                  size="small"
+                  onDelete={() => setFormData({ ...formData, year: '' })}
+                  sx={{
+                    ml: 2,
+                    background: 'linear-gradient(45deg, #9333ea, #ec4899)',
+                    color: '#fff',
+                    '& .MuiChip-deleteIcon': {
+                      color: '#fff'
+                    }
+                  }}
+                />
+              )}
+            </Typography>
+          </Box>
+          
+          <Grid container spacing={2}>
+            {years.map((year, index) => {
+              const yearNumbers = {
+                '1st Year': '01',
+                '2nd Year': '02', 
+                '3rd Year': '03',
+                '4th Year': '04'
+              };
+              
+              return (
+                <Grid item xs={6} sm={3} key={year}>
+                  <Box
+                    onClick={() => {
+                      console.log('Year card clicked:', year);
+                      setFormData({ ...formData, year: year });
+                    }}
+                    sx={{
+                      cursor: 'pointer',
+                      padding: 2,
+                      border: formData.year === year 
+                        ? '2px solid #9333ea' 
+                        : '1px solid rgba(147, 51, 234, 0.3)',
+                      background: formData.year === year
+                        ? 'linear-gradient(135deg, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.1))'
+                        : 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: 3,
+                      textAlign: 'center',
+                      transition: 'all 0.3s ease',
+                      position: 'relative',
+                      zIndex: 10,
+                      pointerEvents: 'auto',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 25px rgba(147, 51, 234, 0.3)',
+                        border: '2px solid #9333ea'
+                      }
+                    }}
+                  >
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        color: formData.year === year ? '#9333ea' : 'rgba(255, 255, 255, 0.9)',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                        mb: 0.5
+                      }}
+                    >
+                      {yearNumbers[year]}
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: formData.year === year ? '#9333ea' : 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.75rem'
                       }}
                     >
                       {year}
-                    </ToggleButton>
-                  ))}
-                </ToggleButtonGroup>
-              </Grid>
+                    </Typography>
+                  </Box>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Box>
 
-              {/* Interactive Semester Selection */}
-              <Grid xs={12}>
-                <Typography variant="subtitle1" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 2 }}>
-                  <CalendarToday sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Select Semester
-                </Typography>
-                <ToggleButtonGroup
-                  value={formData.semester}
-                  exclusive
-                  onChange={(e, newValue) => setFormData({ ...formData, semester: newValue || '' })}
-                  sx={{ mb: 2 }}
-                >
-                  {semesters.map((semester) => (
-                    <ToggleButton
-                      key={semester}
-                      value={semester}
-                      required
-                      sx={{
-                        px: 3,
-                        py: 1,
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        borderColor: 'rgba(236, 72, 153, 0.3)',
-                        '&.Mui-selected': {
-                          background: 'linear-gradient(45deg, #ec4899, #db2777)',
-                          color: '#fff',
-                          borderColor: '#ec4899'
-                        },
-                        '&:hover': {
-                          borderColor: '#ec4899',
-                          background: 'rgba(236, 72, 153, 0.1)'
-                        }
+              {/* Enhanced Semester Selection - Modern Card Design */}
+        <Box mb={3}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                color: 'rgba(255, 255, 255, 0.8)', 
+                mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              <CalendarToday sx={{ 
+                mr: 1, 
+                verticalAlign: 'middle',
+                color: '#ec4899',
+                fontSize: 20
+              }} />
+              Semester
+              {formData.semester && (
+                <Chip 
+                  label={formData.semester}
+                  size="small"
+                  onDelete={() => setFormData({ ...formData, semester: '' })}
+                  sx={{
+                    ml: 2,
+                    background: 'linear-gradient(45deg, #ec4899, #db2777)',
+                    color: '#fff',
+                    '& .MuiChip-deleteIcon': {
+                      color: '#fff'
+                    }
+                  }}
+                />
+              )}
+            </Typography>
+          </Box>
+          
+          <Grid container spacing={2}>
+            {semesters.map((semester, index) => {
+              const semesterNumbers = {
+                '1st Semester': '01',
+                '2nd Semester': '02'
+              };
+              
+              return (
+                <Grid item xs={6} sm={3} key={semester}>
+                  <Box
+                    onClick={() => {
+                      console.log('Semester card clicked:', semester);
+                      setFormData({ ...formData, semester: semester });
+                    }}
+                    sx={{
+                      cursor: 'pointer',
+                      padding: 2,
+                      border: formData.semester === semester 
+                        ? '2px solid #ec4899' 
+                        : '1px solid rgba(236, 72, 153, 0.3)',
+                      background: formData.semester === semester
+                        ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(147, 51, 234, 0.1))'
+                        : 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: 3,
+                      textAlign: 'center',
+                      transition: 'all 0.3s ease',
+                      position: 'relative',
+                      zIndex: 10,
+                      pointerEvents: 'auto',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 25px rgba(236, 72, 153, 0.3)',
+                        border: '2px solid #ec4899'
+                      }
+                    }}
+                  >
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        color: formData.semester === semester ? '#ec4899' : 'rgba(255, 255, 255, 0.9)',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                        mb: 0.5
+                      }}
+                    >
+                      {semesterNumbers[semester]}
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: formData.semester === semester ? '#ec4899' : 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.75rem'
                       }}
                     >
                       {semester}
-                    </ToggleButton>
-                  ))}
-                </ToggleButtonGroup>
-              </Grid>
+                    </Typography>
+                  </Box>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Box>
 
               {/* Interactive Subject Selection */}
               <Grid xs={12}>
