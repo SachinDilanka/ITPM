@@ -6,6 +6,7 @@ const {
     getMyNoteById,
     getPublicApprovedNoteById,
     updateMyNote,
+    postAiStudyGuideForApprovedNote,
 } = require('../controllers/notesController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -18,6 +19,8 @@ router.use(protect);
 
 router.post('/', upload.single('file'), createNote);
 router.get('/my', getMyNotes);
+
+router.post('/ai/study-guide/:id', postAiStudyGuideForApprovedNote);
 
 router.get('/:id', getMyNoteById);
 router.put('/:id', upload.single('file'), updateMyNote);

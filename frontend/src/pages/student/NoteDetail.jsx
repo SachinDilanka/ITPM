@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FileText, Download, BookOpen } from 'lucide-react';
+import { FileText, Download, BookOpen, Sparkles } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { getPublicNoteByIdApi } from '../../api/notesApi';
+import { getPublicNoteByIdApi, postNoteAiStudyGuideApi } from '../../api/notesApi';
 import Spinner from '../../components/ui/Spinner';
 import { getMediaUrl, formatDate, statusBadgeClass } from '../../utils/helpers';
 import useAuth from '../../hooks/useAuth';
+import Button from '../../components/ui/Button';
 
 const noteStatusLabel = (status) => {
     const s = status?.toLowerCase?.();
@@ -19,6 +20,10 @@ const NoteDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState(null);
+    const [aiResult, setAiResult] = useState(null);
 
     const fetchFn = useMemo(() => () => getPublicNoteByIdApi(id), [id]);
     const { data, loading, error } = useFetch(fetchFn, true);
@@ -46,6 +51,23 @@ const NoteDetail = () => {
             </div>
         );
     }
+
+    const isApproved = note.status === 'approved';
+
+    const handleAiStudyGuide = async () => {
+        if (!note?._id || !isApproved) return;
+        setAiLoading(true);
+        setAiError(null);
+        setAiResult(null);
+        try {
+            const { data } = await postNoteAiStudyGuideApi(note._id);
+            setAiResult(data || null);
+        } catch (err) {
+            setAiError(err.response?.data?.message || err.message || 'Could not generate study guide.');
+        } finally {
+            setAiLoading(false);
+        }
+    };
 
     return (
         <div className="page-container" style={{ maxWidth: 820 }}>
@@ -125,9 +147,79 @@ const NoteDetail = () => {
                     {note.lastEditedAt && <div style={{ marginTop: '0.25rem' }}>Last edited: {formatDate(note.lastEditedAt)}</div>}
                 </div>
             </div>
+
+            {isApproved && user && (
+                <div className="card" style={{ marginTop: '1.5rem' }}>
+                    <div className="page-header" style={{ marginBottom: '1rem' }}>
+                        <h2 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Sparkles size={20} color="var(--primary-light)" />
+                            AI study guide
+                        </h2>
+                        <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                            Bullet summary and 10 practice questions (OpenAI, default model gpt-4o-mini). Uses the note title and description only — not the attachment file.
+                        </p>
+                    </div>
+
+                    {aiError && (
+                        <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
+                            {aiError}
+                        </div>
+                    )}
+
+                    <Button type="button" variant="secondary" loading={aiLoading} onClick={handleAiStudyGuide}>
+                        Generate summary &amp; 10 Q&amp;A
+                    </Button>
+
+                    {aiResult && (
+                        <div style={{ marginTop: '1.25rem' }}>
+                            {Array.isArray(aiResult.summaryBullets) && aiResult.summaryBullets.length > 0 && (
+                                <div style={{ marginBottom: '1.25rem' }}>
+                                    <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>Summary</div>
+                                    <ul style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                                        {aiResult.summaryBullets.map((b, i) => (
+                                            <li key={`${i}-${String(b).slice(0, 24)}`}>{b}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {Array.isArray(aiResult.qa) && aiResult.qa.length > 0 && (
+                                <div>
+                                    <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>Questions &amp; answers</div>
+                                    <ol style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                                        {aiResult.qa.map((item, i) => (
+                                            <li key={`${i}-qa`} style={{ marginBottom: '0.85rem' }}>
+                                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.question}</div>
+                                                <div style={{ marginTop: '0.25rem' }}>{item.answer}</div>
+                                            </li>
+                                        ))}
+                                    </ol>
+                                </div>
+                            )}
+
+                            {aiResult.raw && (
+                                <pre
+                                    style={{
+                                        marginTop: '1rem',
+                                        padding: '1rem',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: '1px solid var(--border)',
+                                        background: 'var(--bg-surface)',
+                                        fontSize: '0.8rem',
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-word',
+                                        color: 'var(--text-secondary)',
+                                    }}
+                                >
+                                    {aiResult.raw}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
 
 export default NoteDetail;
-

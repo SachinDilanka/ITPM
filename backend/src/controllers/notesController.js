@@ -5,6 +5,76 @@ const Note = require('../models/Note');
 
 const uploadsAbsoluteDir = path.join(__dirname, '..', '..', 'uploads');
 
+const stripHtml = (html) => {
+    if (!html || typeof html !== 'string') return '';
+    return html
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+const defaultOpenAiUrl = 'https://api.openai.com/v1/chat/completions';
+
+const callOpenAiChat = async (messages) => {
+    const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+    if (!apiKey) {
+        const err = new Error('AI is not configured (set OPENAI_API_KEY in backend/.env).');
+        err.statusCode = 501;
+        throw err;
+    }
+
+    const url = (process.env.OPENAI_API_URL || defaultOpenAiUrl).trim();
+    const model = (process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini').trim();
+
+    let res;
+    try {
+        res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                model,
+                messages,
+                temperature: 0.4,
+                max_tokens: 4096,
+                response_format: { type: 'json_object' },
+            }),
+            signal: AbortSignal.timeout(120000),
+        });
+    } catch (e) {
+        const err = new Error(e.message || 'Network error calling OpenAI API');
+        err.statusCode = 502;
+        throw err;
+    }
+
+    const rawText = await res.text();
+    let data;
+    try {
+        data = JSON.parse(rawText);
+    } catch {
+        const err = new Error(`OpenAI returned non-JSON (${res.status}): ${rawText.slice(0, 240)}`);
+        err.statusCode = res.status >= 400 ? res.status : 502;
+        throw err;
+    }
+
+    if (!res.ok) {
+        const msg = data?.error?.message || rawText || res.statusText || 'OpenAI request failed';
+        const err = new Error(typeof msg === 'string' ? msg : 'OpenAI request failed');
+        err.statusCode = res.status;
+        throw err;
+    }
+
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content || typeof content !== 'string') {
+        const err = new Error('OpenAI returned an empty response.');
+        err.statusCode = 502;
+        throw err;
+    }
+    return content.trim();
+};
+
 // @desc  Create / upload a new note
 // @route POST /api/notes
 // @access Private (student)
@@ -116,10 +186,71 @@ const updateMyNote = asyncHandler(async (req, res) => {
     res.json({ message: 'Note updated', note });
 });
 
+// @desc  OpenAI study guide: bullet summary + 10 Q&A (admin-approved notes only)
+// @route POST /api/notes/ai/study-guide/:id
+// @access Private (student)
+const postAiStudyGuideForApprovedNote = asyncHandler(async (req, res) => {
+    const note = await Note.findById(req.params.id).populate('uploadedBy', 'name email');
+    if (!note || note.status !== 'approved') {
+        res.status(404);
+        throw new Error('Note not found');
+    }
+
+    const descriptionText = stripHtml(note.description);
+
+    const schemaHint = `Return a single JSON object with exactly these keys:
+- "summaryBullets": array of 5 to 10 short strings (bullet-point style summaries)
+- "qa": array of exactly 10 objects, each with "question" and "answer" strings
+
+Ground everything in the note. If the note is short, still provide 10 simple questions tied to what is stated.`;
+
+    const userContent = `${schemaHint}
+
+Note title: ${note.title}
+Subject: ${note.subject}
+Semester: ${note.semester}
+Year: ${note.year ?? ''}
+
+Note body:
+${descriptionText || '(no description — use title and metadata only)'}`;
+
+    const messages = [
+        {
+            role: 'system',
+            content:
+                'You are a helpful study assistant for students. Reply with valid JSON only, no markdown fences, matching the schema the user describes.',
+        },
+        { role: 'user', content: userContent },
+    ];
+
+    const text = await callOpenAiChat(messages);
+
+    try {
+        const parsed = JSON.parse(text);
+        const summaryBullets = Array.isArray(parsed.summaryBullets) ? parsed.summaryBullets : [];
+        const qa = Array.isArray(parsed.qa) ? parsed.qa : [];
+        return res.json({ summaryBullets, qa });
+    } catch {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            try {
+                const parsed = JSON.parse(jsonMatch[0]);
+                const summaryBullets = Array.isArray(parsed.summaryBullets) ? parsed.summaryBullets : [];
+                const qa = Array.isArray(parsed.qa) ? parsed.qa : [];
+                return res.json({ summaryBullets, qa });
+            } catch {
+                /* fall through */
+            }
+        }
+        return res.json({ raw: text, summaryBullets: [], qa: [] });
+    }
+});
+
 module.exports = {
     createNote,
     getMyNotes,
     getMyNoteById,
     getPublicApprovedNoteById,
     updateMyNote,
+    postAiStudyGuideForApprovedNote,
 };

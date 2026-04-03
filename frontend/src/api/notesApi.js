@@ -25,3 +25,7 @@ export const updateMyNoteApi = (id, formData) =>
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 
+/** OpenAI-backed study guide for admin-approved notes (requires auth). */
+export const postNoteAiStudyGuideApi = (id) =>
+    axiosInstance.post(`/notes/ai/study-guide/${id}`);
+
