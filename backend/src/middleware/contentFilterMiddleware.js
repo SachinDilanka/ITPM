@@ -9,6 +9,33 @@ const BAD_WORDS = [
     'bastard', 'retard', 'freak', 'weirdo', 'kill', 'die', 'death', 'destroy'
 ];
 
+// Check for excessive symbols/emojis
+const hasExcessiveSymbolsOrEmojis = (text) => {
+    // Emoji regex pattern
+    const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+    
+    // Special symbol regex (excluding normal punctuation)
+    const specialSymbolRegex = /[~`!@#$%^&*()_+=\[\]{};:"\|<>/?€£¥₹§¶•ªº]/g;
+    
+    // Count emojis
+    const emojiMatches = text.match(new RegExp(emojiRegex, 'gu')) || [];
+    if (emojiMatches.length > 3) {
+        return { invalid: true, reason: 'Too many emojis (max 3 allowed)' };
+    }
+    
+    // Count special symbols
+    const symbolMatches = text.match(specialSymbolRegex) || [];
+    const symbolCount = symbolMatches.length;
+    const textLength = text.length;
+    
+    // If more than 30% of text is symbols, reject
+    if (textLength > 0 && (symbolCount / textLength) > 0.3) {
+        return { invalid: true, reason: 'Too many special symbols' };
+    }
+    
+    return { invalid: false };
+};
+
 // Local bad word check function
 const containsBadWords = (text) => {
     const lowerText = text.toLowerCase();
@@ -45,7 +72,17 @@ export const checkInappropriateContent = async (req, res, next) => {
 
         console.log(`🌐 Original: "${comment}" → English: "${translatedComment}"`);
 
-        // Step 2: Local bad word check on ENGLISH text
+        // Step 2: Check for excessive symbols/emojis
+        const symbolCheck = hasExcessiveSymbolsOrEmojis(comment);
+        if (symbolCheck.invalid) {
+            return res.status(400).json({
+                success: false,
+                message: '🚫 Your comment contains too many symbols or emojis. Please use normal text.',
+                reason: symbolCheck.reason
+            });
+        }
+
+        // Step 3: Local bad word check on ENGLISH text
         const localCheck = containsBadWords(translatedComment);
         if (localCheck.found) {
             return res.status(400).json({
@@ -55,7 +92,22 @@ export const checkInappropriateContent = async (req, res, next) => {
             });
         }
 
-        // Step 3: Save translated English comment to req.body
+        // Step 4: Gemini harmful check on ENGLISH text (if API available)
+        if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here') {
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+            const analysis = await checkHarmfulWithGemini(genAI, translatedComment);
+
+            if (analysis && analysis.isInappropriate === true) {
+                return res.status(400).json({
+                    success: false,
+                    message: '🚫 Your comment is harmful. Please write a respectful comment.',
+                    reason: analysis.reason || 'Harmful content detected'
+                });
+            }
+        }
+
+        // Step 5: Save translated English comment to req.body
+
         if (!isAlreadyEnglish) {
             req.body.originalComment = comment;          // Original language save
             req.body.comment = translatedComment;         // English translation save
