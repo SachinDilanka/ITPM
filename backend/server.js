@@ -16,6 +16,7 @@ import filterRoutes from './src/routes/filterRoutes.js';
 import notesRoutes from './src/routes/notesRoutes.js';
 import queueRoutes from './src/routes/queueRoutes.js';
 import analyticsRoutes from './src/routes/analyticsRoutes.js';
+import chatbotRoutes from './src/routes/chatbotRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -42,6 +43,7 @@ app.use('/api/filter', filterRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // Base route for testing
 app.get('/', (req, res) => {

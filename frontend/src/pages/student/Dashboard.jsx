@@ -4,7 +4,7 @@ import { FileText, Upload, Search, TrendingUp, Clock, BookOpen } from 'lucide-re
 import useAuth from '../../hooks/useAuth';
 import useFetch from '../../hooks/useFetch';
 import { filterNotesApi, getPendingQueueApi } from '../../api/notesApi';
-import { getRatingSummariesApi, upsertRatingApi } from '../../api/ratingsApi';
+import { getRatingSummariesApi, upsertRatingApi, deleteRatingApi } from '../../api/ratingsApi';
 import Spinner from '../../components/ui/Spinner';
 import NoteCard from '../../components/cards/NoteCard';
 import Button from '../../components/ui/Button';
@@ -62,26 +62,28 @@ const StudentDashboard = () => {
     }, [notes, user?._id]);
 
     const handleRateNote = async (noteId, rating) => {
-        const selectedNote = notes.find((note) => String(note._id) === String(noteId));
-        const uploaderId = selectedNote?.uploadedBy?._id || selectedNote?.uploadedBy;
-        if (String(uploaderId || '') === String(user?._id || '')) {
-            return;
-        }
-
         setRatingLoadingNoteId(noteId);
         try {
             if (rating === 0) {
                 // Delete existing rating
                 const existing = ratingsByNoteId[noteId];
-                if (existing?.userRating) {
-                    const ratingId = existing.ratingId;
-                    if (ratingId) {
-                        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ratings/${ratingId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${user?.token}`,
-                            }
-                        });
+                if (existing?.ratingId) {
+                    const res = await deleteRatingApi(existing.ratingId);
+                    const summary = res.data?.summary;
+                    if (summary) {
+                        setRatingsByNoteId((prev) => ({
+                            ...prev,
+                            [String(summary.noteId || noteId)]: summary,
+                        }));
+                    } else {
+                        setRatingsByNoteId((prev) => ({
+                            ...prev,
+                            [noteId]: {
+                                ...(prev[noteId] || {}),
+                                userRating: null,
+                                ratingId: null,
+                            },
+                        }));
                     }
                 }
             } else {
@@ -94,16 +96,6 @@ const StudentDashboard = () => {
                         [String(summary.noteId || noteId)]: summary,
                     }));
                 }
-            }
-            // Clear the rating from UI after delete
-            if (rating === 0) {
-                setRatingsByNoteId((prev) => ({
-                    ...prev,
-                    [noteId]: {
-                        ...(prev[noteId] || {}),
-                        userRating: null,
-                    },
-                }));
             }
         } catch {
             // Keep UI stable and avoid interrupting browsing if rating fails.

@@ -4,6 +4,7 @@ import useAuth from '../hooks/useAuth';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import ChatBot from '../components/ui/ChatBot';
 
 // Protected route wrapper – requires authentication + role
 export const ProtectedRoute = ({ requiredRole }) => {
@@ -29,6 +30,7 @@ export const ProtectedRoute = ({ requiredRole }) => {
                 <Outlet />
                 <Footer />
             </div>
+            {(!requiredRole || requiredRole === 'student') && <ChatBot />}
         </div>
     );
 };

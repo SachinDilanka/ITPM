@@ -2,7 +2,7 @@ import express from 'express';
 import {
     createRating,
     getAllRatings,
-    getRatingsByPdfId,
+    getRatingsByNoteId,
     getRatingsSummaryByNoteIds,
     getTopRatedPdfs,
     getTopRatedUsers,
@@ -38,9 +38,8 @@ router.get('/top', getTopRatedPdfs);
 // Get top-rated users in descending order
 router.get('/top-users', getTopRatedUsers);
 
-// Get ratings by PDF ID
-router.get('/pdf/:pdfId', getRatingsByPdfId);
-router.get('/note/:noteId', getRatingsByPdfId);
+// Get ratings by Note ID
+router.get('/note/:noteId', getRatingsByNoteId);
 
 // Get a single rating by ID
 router.get('/:id', validateMongoId, getRatingById);

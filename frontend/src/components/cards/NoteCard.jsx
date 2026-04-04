@@ -25,6 +25,7 @@ const NoteCard = ({
     const userRating = Number(ratingSummary?.userRating || 0);
     const uploaderId = uploadedBy?._id || uploadedBy;
     const isOwnNote = Boolean(currentUserId && String(uploaderId || '') === String(currentUserId || ''));
+    const hasRated = userRating > 0;
 
     return (
         <div className="note-card card-hover">
@@ -80,21 +81,23 @@ const NoteCard = ({
                             type="button"
                             className={`note-rate-btn ${value <= userRating ? 'active' : ''}`}
                             onClick={() => onRate && onRate(_id, value)}
-                            disabled={!onRate || ratingBusy || isOwnNote}
-                            title={isOwnNote ? 'You cannot rate your own PDF' : `Rate ${value} star${value > 1 ? 's' : ''}`}
+                            disabled={!onRate || ratingBusy}
+                            title={`Rate ${value} star${value > 1 ? 's' : ''}`}
                         >
                             <Star size={14} />
                         </button>
                     ))}
                 </div>
                 <div className="note-rating-actions-row">
-                    {isOwnNote && <span className="note-rating-owner-hint">You cannot rate your own PDF</span>}
-                    {userRating > 0 && !isOwnNote && (
+                    {isOwnNote && hasRated && (
+                        <span className="note-rating-owner-hint">You rated your own note</span>
+                    )}
+                    {hasRated && (
                         <button
                             type="button"
                             className="note-unrate-btn"
                             onClick={() => {
-                                if (window.confirm('Remove your rating from this PDF?')) {
+                                if (window.confirm('Remove your rating?')) {
                                     onRate && onRate(_id, 0);
                                 }
                             }}

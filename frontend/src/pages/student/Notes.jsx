@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Search, Filter, BookOpen } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { filterNotesApi } from '../../api/notesApi';
-import { getRatingSummariesApi, upsertRatingApi } from '../../api/ratingsApi';
+import { getRatingSummariesApi, upsertRatingApi, deleteRatingApi } from '../../api/ratingsApi';
 import useAuth from '../../hooks/useAuth';
 import NoteCard from '../../components/cards/NoteCard';
 import Spinner from '../../components/ui/Spinner';
@@ -18,6 +18,20 @@ const Notes = () => {
     const fetchFn = useCallback(() => filterNotesApi(filters), [filters]);
     const { data, loading, error, execute } = useFetch(fetchFn);
     const notes = useMemo(() => data?.notes || data || [], [data]);
+
+    const sortedNotes = useMemo(() => {
+        return [...notes].sort((a, b) => {
+            const aAvg = Number(ratingsByNoteId[a._id]?.averageRating || 0);
+            const bAvg = Number(ratingsByNoteId[b._id]?.averageRating || 0);
+            if (bAvg !== aAvg) return bAvg - aAvg;
+
+            const aTotal = Number(ratingsByNoteId[a._id]?.totalRatings || 0);
+            const bTotal = Number(ratingsByNoteId[b._id]?.totalRatings || 0);
+            if (bTotal !== aTotal) return bTotal - aTotal;
+
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+    }, [notes, ratingsByNoteId]);
 
     useEffect(() => {
         if (!user?._id || notes.length === 0) {
@@ -48,15 +62,23 @@ const Notes = () => {
             if (rating === 0) {
                 // Delete existing rating
                 const existing = ratingsByNoteId[noteId];
-                if (existing?.userRating) {
-                    const ratingId = existing.ratingId;
-                    if (ratingId) {
-                        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ratings/${ratingId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${user?.token}`,
-                            }
-                        });
+                if (existing?.ratingId) {
+                    const res = await deleteRatingApi(existing.ratingId);
+                    const summary = res.data?.summary;
+                    if (summary) {
+                        setRatingsByNoteId((prev) => ({
+                            ...prev,
+                            [String(summary.noteId || noteId)]: summary,
+                        }));
+                    } else {
+                        setRatingsByNoteId((prev) => ({
+                            ...prev,
+                            [noteId]: {
+                                ...(prev[noteId] || {}),
+                                userRating: null,
+                                ratingId: null,
+                            },
+                        }));
                     }
                 }
             } else {
@@ -69,16 +91,6 @@ const Notes = () => {
                         [String(summary.noteId || noteId)]: summary,
                     }));
                 }
-            }
-            // Clear the rating from UI after delete
-            if (rating === 0) {
-                setRatingsByNoteId((prev) => ({
-                    ...prev,
-                    [noteId]: {
-                        ...(prev[noteId] || {}),
-                        userRating: null,
-                    },
-                }));
             }
         } catch {
             // Keep browsing uninterrupted if rating request fails.
@@ -147,10 +159,10 @@ const Notes = () => {
             ) : (
                 <>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                        Found <strong style={{ color: 'var(--text-primary)' }}>{notes.length}</strong> notes
+                        Found <strong style={{ color: 'var(--text-primary)' }}>{sortedNotes.length}</strong> notes
                     </p>
                     <div className="grid-3">
-                        {notes.map((note) => (
+                        {sortedNotes.map((note) => (
                             <NoteCard
                                 key={note._id}
                                 note={note}

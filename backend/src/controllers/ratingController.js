@@ -45,13 +45,6 @@ export const createRating = async (req, res) => {
             });
         }
 
-        if (String(note.uploadedBy) === String(userId)) {
-            return res.status(403).json({
-                success: false,
-                message: 'You cannot rate your own PDF'
-            });
-        }
-
         const existingRating = await Rating.findOne({ noteId: incomingNoteId, userId });
 
         if (existingRating) {
@@ -117,12 +110,12 @@ export const getAllRatings = async (req, res) => {
     }
 };
 
-// @desc    Get ratings by PDF ID with average
-// @route   GET /api/ratings/pdf/:pdfId
+// @desc    Get ratings by Note ID with average
+// @route   GET /api/ratings/note/:noteId
 // @access  Public
-export const getRatingsByPdfId = async (req, res) => {
+export const getRatingsByNoteId = async (req, res) => {
     try {
-        const noteId = req.params.noteId || req.params.pdfId;
+        const noteId = req.params.noteId;
 
         const ratings = await Rating.find({ noteId }).sort({ createdAt: -1 });
 
@@ -182,9 +175,7 @@ export const getTopRatedPdfs = async (req, res) => {
                 $project: {
                     _id: 0,
                     noteId: '$_id',
-                    pdfId: '$_id',
                     noteTitle: '$note.title',
-                    pdfTitle: '$note.title',
                     averageRating: { $round: ['$averageRating', 2] },
                     totalRatings: 1
                 }
