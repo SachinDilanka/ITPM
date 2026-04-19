@@ -21,6 +21,9 @@ export const reactivateUserApi = (id) =>
     axiosInstance.put(`/admin/users/${id}/reactivate`);
 
 // Notes
+export const getAdminNoteByIdApi = (id) =>
+    axiosInstance.get(`/admin/notes/${id}`);
+
 export const approveNoteApi = (id) =>
     axiosInstance.put(`/admin/notes/${id}/approve`);
 

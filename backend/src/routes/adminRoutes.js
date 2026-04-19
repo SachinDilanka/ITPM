@@ -11,6 +11,7 @@ const {
     rejectNote,
     updateNotePriority,
     getReportedNotes,
+    getAdminNoteById,
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 const { adminOnly } = require('../middleware/adminMiddleware');
@@ -23,6 +24,7 @@ router.get('/users/suspended', getSuspendedStudents);
 router.put('/users/:id/approve', approveUser);
 router.put('/users/:id/suspend', suspendUser);
 router.put('/users/:id/reactivate', reactivateUser);
+router.get('/notes/:id', getAdminNoteById);
 router.put('/notes/:id/approve', approveNote);
 router.put('/notes/:id/reject', rejectNote);
 router.put('/notes/:id/priority', updateNotePriority);

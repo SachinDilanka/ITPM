@@ -105,7 +105,11 @@ const AdminDashboard = () => {
                                 <div key={item._id || i} className="queue-item">
                                     <div className="queue-rank">#{i + 1}</div>
                                     <div className="queue-info">
-                                        <div className="queue-title">{item.title}</div>
+                                        <div className="queue-title">
+                                            <Link to={`/admin/notes/${item._id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                                {item.title}
+                                            </Link>
+                                        </div>
                                         <div className="queue-meta">{item.subject} · {item.uploadedBy?.name || 'Unknown'}</div>
                                         {(item.createdAt || item.lastEditedAt) && (
                                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
@@ -177,7 +181,11 @@ const AdminDashboard = () => {
                                 <tbody>
                                     {(stats?.mostReportedNotes || []).map((note) => (
                                         <tr key={note._id}>
-                                            <td>{truncateText(note.title, 30)}</td>
+                                            <td>
+                                                <Link to={`/admin/notes/${note._id}`} style={{ color: 'var(--primary-light)', fontWeight: 600 }}>
+                                                    {truncateText(note.title, 30)}
+                                                </Link>
+                                            </td>
                                             <td><span className="badge badge-danger">{note.reportsCount}</span></td>
                                             <td style={{ color: 'var(--text-muted)' }}>{note.uploadedBy?.name || '—'}</td>
                                         </tr>

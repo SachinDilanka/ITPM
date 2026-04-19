@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, FileText, Upload, User, Users,
-    ClipboardList, BarChart2, AlertTriangle, Layers, LogOut, BookOpen
+    ClipboardList, BarChart2, AlertTriangle, Layers, LogOut, BookOpen,
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 

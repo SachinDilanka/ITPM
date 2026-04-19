@@ -34,7 +34,8 @@ export const createComment = async (req, res) => {
 // @access  Public
 export const getAllComments = async (req, res) => {
     try {
-        const comments = await Comment.find().sort({ createdAt: -1 });
+        // Only return note/PDF comments; older forum/QnA comment documents may exist in the same collection.
+        const comments = await Comment.find({ pdfId: { $exists: true, $ne: null } }).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -164,7 +165,7 @@ export const getCommentsByUserId = async (req, res) => {
     try {
         const { userId } = req.params;
 
-        const comments = await Comment.find({ userId }).sort({ createdAt: -1 });
+        const comments = await Comment.find({ userId, pdfId: { $exists: true, $ne: null } }).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,

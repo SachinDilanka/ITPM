@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const fs = require('fs');
 const path = require('path');
 const Note = require('../models/Note');
+const Report = require('../models/Report');
 
 const uploadsAbsoluteDir = path.join(__dirname, '..', '..', 'uploads');
 
@@ -246,6 +247,51 @@ ${descriptionText || '(no description — use title and metadata only)'}`;
     }
 });
 
+// @desc  Report an approved note (other students only; one report per user per note)
+// @route POST /api/notes/:id/report
+// @access Private
+const reportApprovedNote = asyncHandler(async (req, res) => {
+    const raw = req.body?.comment ?? req.body?.reason ?? '';
+    const reason = typeof raw === 'string' ? raw.trim() : '';
+    if (!reason || reason.length < 3) {
+        res.status(400);
+        throw new Error('Please add a short comment (at least 3 characters) explaining the issue');
+    }
+    if (reason.length > 2000) {
+        res.status(400);
+        throw new Error('Comment is too long (max 2000 characters)');
+    }
+
+    const note = await Note.findById(req.params.id);
+    if (!note || note.status !== 'approved') {
+        res.status(404);
+        throw new Error('Note not found');
+    }
+
+    const uploaderId = note.uploadedBy?.toString?.() || String(note.uploadedBy);
+    if (uploaderId === req.user._id.toString()) {
+        res.status(400);
+        throw new Error('You cannot report your own note');
+    }
+
+    const existing = await Report.findOne({ noteId: note._id, reportedBy: req.user._id });
+    if (existing) {
+        res.status(400);
+        throw new Error('You have already reported this note');
+    }
+
+    await Report.create({
+        noteId: note._id,
+        reportedBy: req.user._id,
+        reason,
+    });
+
+    note.reportsCount = (note.reportsCount || 0) + 1;
+    await note.save();
+
+    res.status(201).json({ message: 'Thank you. An admin will review your report.', success: true });
+});
+
 module.exports = {
     createNote,
     getMyNotes,
@@ -253,4 +299,5 @@ module.exports = {
     getPublicApprovedNoteById,
     updateMyNote,
     postAiStudyGuideForApprovedNote,
+    reportApprovedNote,
 };

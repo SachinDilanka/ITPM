@@ -64,19 +64,17 @@ export const validateCommentUpdate = (req, res, next) => {
 };
 
 export const validateRatingCreate = (req, res, next) => {
-    const { pdfId, userId, userName, rating } = req.body;
+    const { noteId, pdfId, rating } = req.body;
     const errors = [];
 
-    if (!pdfId || pdfId.trim() === '') {
-        errors.push('PDF ID is required');
-    }
-
-    if (!userId || userId.trim() === '') {
-        errors.push('User ID is required');
-    }
-
-    if (!userName || userName.trim() === '') {
-        errors.push('Username is required');
+    const incomingNoteId = noteId || pdfId;
+    if (!incomingNoteId || String(incomingNoteId).trim() === '') {
+        errors.push('Note ID is required');
+    } else {
+        const mongoIdPattern = /^[0-9a-fA-F]{24}$/;
+        if (!mongoIdPattern.test(String(incomingNoteId))) {
+            errors.push('Note ID must be a valid Mongo ID');
+        }
     }
 
     if (!rating) {

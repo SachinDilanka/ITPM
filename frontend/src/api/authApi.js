@@ -8,3 +8,10 @@ export const registerApi = (userData) =>
 
 export const uploadAvatarApi = (formData) =>
     axiosInstance.post('/auth/profile/avatar', formData);
+
+export const updateProfileApi = (data) => axiosInstance.put('/auth/profile', data);
+
+export const getProfileSummaryApi = () => axiosInstance.get('/auth/profile/summary');
+
+export const deleteAccountApi = (password) =>
+    axiosInstance.delete('/auth/account', { data: { password } });

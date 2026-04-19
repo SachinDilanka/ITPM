@@ -2,19 +2,18 @@ import mongoose from 'mongoose';
 
 const ratingSchema = new mongoose.Schema(
     {
-        pdfId: {
-            type: String,
-            required: [true, 'PDF ID is required'],
-            trim: true
+        noteId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Note',
+            required: [true, 'Note ID is required']
         },
         userId: {
-            type: String,
-            required: [true, 'User ID is required'],
-            trim: true
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: [true, 'User ID is required']
         },
-        userName: {
+        userNameSnapshot: {
             type: String,
-            required: [true, 'Username is required'],
             trim: true
         },
         rating: {
@@ -23,7 +22,7 @@ const ratingSchema = new mongoose.Schema(
             min: [1, 'Rating must be at least 1'],
             max: [5, 'Rating cannot exceed 5']
         },
-        pdfTitle: {
+        noteTitleSnapshot: {
             type: String,
             trim: true
         }
@@ -33,8 +32,9 @@ const ratingSchema = new mongoose.Schema(
     }
 );
 
-// One user can only rate a PDF once
-ratingSchema.index({ pdfId: 1, userId: 1 }, { unique: true });
+// One user can only rate a note once.
+ratingSchema.index({ noteId: 1, userId: 1 }, { unique: true });
+ratingSchema.index({ noteId: 1 });
 
 const Rating = mongoose.model('Rating', ratingSchema);
 

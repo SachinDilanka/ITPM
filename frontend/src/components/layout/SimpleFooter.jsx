@@ -1,6 +1,7 @@
 import { BookOpen, Heart } from 'lucide-react';
 
-const Footer = () => (
+/** Compact footer for authenticated app layout (dashboard, notes, etc.). */
+const SimpleFooter = () => (
     <footer
         style={{
             padding: '1rem 2rem',
@@ -24,4 +25,4 @@ const Footer = () => (
     </footer>
 );
 
-export default Footer;
+export default SimpleFooter;

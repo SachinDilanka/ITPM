@@ -1,12 +1,15 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { FileText, Download, BookOpen, Sparkles } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { FileText, Download, BookOpen, Sparkles, Flag, Star } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { getPublicNoteByIdApi, postNoteAiStudyGuideApi } from '../../api/notesApi';
+import { getPublicNoteByIdApi, postNoteAiStudyGuideApi, reportNoteApi } from '../../api/notesApi';
+import { getAdminNoteByIdApi } from '../../api/adminApi';
 import Spinner from '../../components/ui/Spinner';
-import { getMediaUrl, formatDate, statusBadgeClass } from '../../utils/helpers';
+import { getMediaUrl, formatDate, statusBadgeClass, getUserMongoId, idsEqual, getNoteUploaderId } from '../../utils/helpers';
 import useAuth from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
+import NoteCommentsSection from '../../components/notes/NoteCommentsSection';
+import { useNoteRatings } from '../../hooks/useNoteRatings';
 
 const noteStatusLabel = (status) => {
     const s = status?.toLowerCase?.();
@@ -19,16 +22,41 @@ const noteStatusLabel = (status) => {
 const NoteDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
+
+    const isAdminView = location.pathname.startsWith('/admin/notes/');
 
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState(null);
     const [aiResult, setAiResult] = useState(null);
 
-    const fetchFn = useMemo(() => () => getPublicNoteByIdApi(id), [id]);
-    const { data, loading, error } = useFetch(fetchFn, true);
+    const [reportOpen, setReportOpen] = useState(false);
+    const [reportComment, setReportComment] = useState('');
+    const [reportLoading, setReportLoading] = useState(false);
+    const [reportError, setReportError] = useState(null);
+    const [reportSent, setReportSent] = useState(false);
+
+    const [ratingNote, setRatingNote] = useState(null);
+    const { ratingsByNoteId, handleRateNote, ratingLoadingNoteId } = useNoteRatings(ratingNote ? [ratingNote] : []);
+
+    const fetchFn = useMemo(
+        () => () => (isAdminView ? getAdminNoteByIdApi(id) : getPublicNoteByIdApi(id)),
+        [id, isAdminView]
+    );
+    const { data, loading, error, execute } = useFetch(fetchFn, false);
+
+    useEffect(() => {
+        if (id) execute();
+    }, [id, isAdminView, execute]);
 
     const note = data?.note || data || null;
+
+    useEffect(() => {
+        if (note?._id && !isAdminView) {
+            setRatingNote(note);
+        }
+    }, [note?._id, isAdminView]);
 
     if (loading) {
         return <Spinner message="Loading note..." overlay={false} />;
@@ -53,6 +81,29 @@ const NoteDetail = () => {
     }
 
     const isApproved = note.status === 'approved';
+    const isOwnNote = Boolean(user && idsEqual(getUserMongoId(user), getNoteUploaderId(note)));
+    const canReportNote = !isAdminView && isApproved && user && !isOwnNote;
+
+    const handleSubmitReport = async (e) => {
+        e.preventDefault();
+        const text = reportComment.trim();
+        if (text.length < 3) {
+            setReportError('Please write at least a few words so admins understand the issue.');
+            return;
+        }
+        setReportLoading(true);
+        setReportError(null);
+        try {
+            await reportNoteApi(note._id, { comment: text.slice(0, 2000) });
+            setReportSent(true);
+            setReportOpen(false);
+            setReportComment('');
+        } catch (err) {
+            setReportError(err.response?.data?.message || err.message || 'Could not submit report.');
+        } finally {
+            setReportLoading(false);
+        }
+    };
 
     const handleAiStudyGuide = async () => {
         if (!note?._id || !isApproved) return;
@@ -69,11 +120,31 @@ const NoteDetail = () => {
         }
     };
 
+    const backToManageHref =
+        note.status === 'approved'
+            ? '/admin/notes?status=approved'
+            : note.status === 'pending'
+              ? '/admin/notes?status=pending'
+              : note.status === 'rejected'
+                ? '/admin/notes?status=rejected'
+                : '/admin/notes';
+
     return (
         <div className="page-container" style={{ maxWidth: 820 }}>
             <div className="page-header">
+                {isAdminView && (
+                    <div style={{ marginBottom: '1rem' }}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => navigate(backToManageHref)}
+                        >
+                            ← Back to Manage Notes
+                        </button>
+                    </div>
+                )}
                 <h1>{note.title}</h1>
-                <p>Your uploaded note details</p>
+                <p>{isAdminView ? 'Review note content and attachment (moderation)' : 'Your uploaded note details'}</p>
             </div>
 
             <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
@@ -97,8 +168,7 @@ const NoteDetail = () => {
                 </div>
 
                 {user &&
-                    note?.uploadedBy?._id &&
-                    String(user._id) === String(note.uploadedBy._id) &&
+                    idsEqual(getUserMongoId(user), getNoteUploaderId(note)) &&
                     (note.status === 'pending' || note.status === 'approved') && (
                     <div style={{ marginTop: '1rem' }}>
                         <button
@@ -108,6 +178,29 @@ const NoteDetail = () => {
                         >
                             Edit Note
                         </button>
+                    </div>
+                )}
+
+                {canReportNote && (
+                    <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        {reportSent ? (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                You’ve reported this note. Thanks — an admin will review it.
+                            </span>
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn btn-ghost"
+                                style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.35)' }}
+                                onClick={() => {
+                                    setReportError(null);
+                                    setReportOpen(true);
+                                }}
+                            >
+                                <Flag size={16} style={{ marginRight: 6 }} />
+                                Report note
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -147,6 +240,110 @@ const NoteDetail = () => {
                     {note.lastEditedAt && <div style={{ marginTop: '0.25rem' }}>Last edited: {formatDate(note.lastEditedAt)}</div>}
                 </div>
             </div>
+
+            {isApproved && !isAdminView && user && note._id && (
+                <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <Star size={18} color="var(--primary-light)" />
+                        <div style={{ fontWeight: 700 }}>Rate This Note</div>
+                    </div>
+
+                    {ratingsByNoteId[note._id] && (
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 700, minWidth: '2.5rem' }}>
+                                    {ratingsByNoteId[note._id].averageRating.toFixed(1)}
+                                </span>
+                                <div style={{ display: 'flex', gap: '0.25rem' }} aria-label={`Average rating ${ratingsByNoteId[note._id].averageRating.toFixed(1)} out of 5`}>
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <Star
+                                            key={star}
+                                            size={14}
+                                            style={{
+                                                fill: star <= Math.round(ratingsByNoteId[note._id].averageRating) ? 'var(--primary-light)' : 'transparent',
+                                                color: 'var(--primary-light)',
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                    {ratingsByNoteId[note._id].totalRatings} {ratingsByNoteId[note._id].totalRatings === 1 ? 'rating' : 'ratings'}
+                                </span>
+                            </div>
+
+                            <div style={{ marginBottom: '1rem' }}>
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                                    {ratingsByNoteId[note._id].userRating ? `Your rating: ${ratingsByNoteId[note._id].userRating} star${ratingsByNoteId[note._id].userRating > 1 ? 's' : ''}` : 'You haven\'t rated this note yet'}
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                    {[1, 2, 3, 4, 5].map((value) => (
+                                        <button
+                                            key={value}
+                                            type="button"
+                                            onClick={() => handleRateNote(note._id, value)}
+                                            disabled={ratingLoadingNoteId === note._id}
+                                            style={{
+                                                background: value <= (ratingsByNoteId[note._id].userRating || 0) ? 'var(--primary-light)' : 'transparent',
+                                                border: '1px solid var(--primary-light)',
+                                                color: 'var(--primary-light)',
+                                                padding: '0.5rem 0.75rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                opacity: ratingLoadingNoteId === note._id ? 0.6 : 1,
+                                                transition: 'all 0.2s ease',
+                                                fontSize: '0.9rem',
+                                            }}
+                                            title={`Rate ${value} star${value > 1 ? 's' : ''}`}
+                                        >
+                                            <Star size={14} fill={value <= (ratingsByNoteId[note._id].userRating || 0) ? 'var(--primary-light)' : 'none'} />
+                                        </button>
+                                    ))}
+
+                                    {ratingsByNoteId[note._id].userRating > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (window.confirm('Remove your rating from this note?')) {
+                                                    handleRateNote(note._id, 0);
+                                                }
+                                            }}
+                                            disabled={ratingLoadingNoteId === note._id}
+                                            style={{
+                                                background: 'transparent',
+                                                border: '1px solid var(--danger)',
+                                                color: 'var(--danger)',
+                                                padding: '0.5rem 0.75rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                cursor: 'pointer',
+                                                marginLeft: '0.5rem',
+                                                opacity: ratingLoadingNoteId === note._id ? 0.6 : 1,
+                                                transition: 'all 0.2s ease',
+                                                fontSize: '0.9rem',
+                                            }}
+                                            title="Remove your rating"
+                                        >
+                                            ✕ Unrate
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {(isApproved || isAdminView) && note._id && (
+                <NoteCommentsSection
+                    noteId={note._id}
+                    noteTitle={note.title}
+                    user={user}
+                    isAdminView={isAdminView}
+                />
+            )}
 
             {isApproved && user && (
                 <div className="card" style={{ marginTop: '1.5rem' }}>

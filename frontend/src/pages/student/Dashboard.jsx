@@ -1,12 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Upload, Search, TrendingUp, Clock, BookOpen } from 'lucide-react';
+import { FileText, Upload, TrendingUp, Clock, BookOpen } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import useFetch from '../../hooks/useFetch';
+import { useNoteRatings } from '../../hooks/useNoteRatings';
 import { filterNotesApi, getPendingQueueApi } from '../../api/notesApi';
 import Spinner from '../../components/ui/Spinner';
 import NoteCard from '../../components/cards/NoteCard';
 import Button from '../../components/ui/Button';
+import StudentDashboardAIChat from '../../components/ai/StudentDashboardAIChat';
+import { getUserMongoId, idsEqual, getNoteUploaderId } from '../../utils/helpers';
 
 const StudentDashboard = () => {
     const { user } = useAuth();
@@ -19,6 +22,23 @@ const StudentDashboard = () => {
 
     const notes = notesData?.notes || notesData || [];
     const queue = queueData?.queue || queueData || [];
+    const { ratingsByNoteId, handleRateNote, ratingLoadingNoteId } = useNoteRatings(notes);
+
+    const recentNotes = useMemo(() => {
+        const list = [...notes];
+        list.sort((a, b) => {
+            const ra = Number(ratingsByNoteId[a._id]?.averageRating || 0);
+            const rb = Number(ratingsByNoteId[b._id]?.averageRating || 0);
+            if (rb !== ra) return rb - ra;
+
+            const ta = ratingsByNoteId[a._id]?.totalRatings || 0;
+            const tb = ratingsByNoteId[b._id]?.totalRatings || 0;
+            if (tb !== ta) return tb - ta;
+
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+        return list.slice(0, 6);
+    }, [notes, ratingsByNoteId]);
 
     return (
         <div className="page-container">
@@ -54,7 +74,7 @@ const StudentDashboard = () => {
                 {[
                     { label: 'Available Notes', value: notes.length, icon: <FileText size={48} />, color: 'var(--primary)' },
                     { label: 'In Review Queue', value: queue.length, icon: <Clock size={48} />, color: 'var(--warning)' },
-                    { label: 'Your Contributions', value: notes.filter(n => n.uploadedBy?._id === user?._id).length, icon: <TrendingUp size={48} />, color: 'var(--success)' },
+                    { label: 'Your Contributions', value: notes.filter((n) => idsEqual(getNoteUploaderId(n), getUserMongoId(user))).length, icon: <TrendingUp size={48} />, color: 'var(--success)' },
                 ].map((stat) => (
                     <div className="stat-card" key={stat.label} style={{ '--accent-color': stat.color }}>
                         <span className="stat-label">{stat.label}</span>
@@ -66,7 +86,7 @@ const StudentDashboard = () => {
 
             {/* Recent Notes */}
             <div className="card-header flex-between" style={{ marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Recent Notes</h3>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Top Rated Notes</h3>
                 <Link to="/student/notes">
                     <Button variant="ghost" size="sm">View All →</Button>
                 </Link>
@@ -85,11 +105,20 @@ const StudentDashboard = () => {
                 </div>
             ) : (
                 <div className="grid-3">
-                    {notes.slice(0, 6).map((note) => (
-                        <NoteCard key={note._id} note={note} />
+                    {recentNotes.map((note) => (
+                        <NoteCard
+                            key={note._id}
+                            note={note}
+                            currentUserId={getUserMongoId(user)}
+                            ratingSummary={ratingsByNoteId[note._id]}
+                            onRate={handleRateNote}
+                            ratingBusy={ratingLoadingNoteId === note._id}
+                        />
                     ))}
                 </div>
             )}
+
+            <StudentDashboardAIChat />
         </div>
     );
 };
