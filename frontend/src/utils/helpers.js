@@ -34,6 +34,25 @@ export const getInitials = (name = '') => {
 export const capitalizeFirst = (str = '') =>
     str.charAt(0).toUpperCase() + str.slice(1);
 
+/** Works whether the API sent `_id` or `id` (login /auth/me, etc.). */
+export const getUserMongoId = (user) => {
+    if (!user) return null;
+    return user._id ?? user.id ?? null;
+};
+
+/** Uploader id whether `uploadedBy` is populated `{ _id, name }` or a raw ObjectId. */
+export const getNoteUploaderId = (note) => {
+    const u = note?.uploadedBy;
+    if (u == null) return null;
+    if (typeof u === 'object') return u._id ?? u.id ?? null;
+    return u;
+};
+
+export const idsEqual = (a, b) => {
+    if (a == null || b == null) return false;
+    return String(a) === String(b);
+};
+
 export const statusBadgeClass = (status) => {
     const map = {
         approved: 'badge-success',

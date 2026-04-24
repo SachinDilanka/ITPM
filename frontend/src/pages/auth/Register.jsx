@@ -14,7 +14,17 @@ const Register = () => {
     const [registered, setRegistered] = useState(false);
 
     const { values, errors, touched, handleChange, handleBlur, handleSubmit } = useForm(
-        { name: '', email: '', password: '', confirmPassword: '', role: 'student' },
+        {
+            name: '',
+            email: '',
+            username: '',
+            bio: '',
+            semester: '',
+            branch: '',
+            password: '',
+            confirmPassword: '',
+            role: 'student',
+        },
         validateRegisterForm
     );
 
@@ -85,6 +95,59 @@ const Register = () => {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         error={touched.email && errors.email}
+                    />
+
+                    <Input
+                        label="Username (optional)"
+                        name="username"
+                        placeholder="public handle, min 3 characters"
+                        icon={User}
+                        value={values.username}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.username && errors.username}
+                    />
+
+                    <div className="form-group">
+                        <label className="form-label">Semester (optional)</label>
+                        <select
+                            name="semester"
+                            className="form-input"
+                            value={values.semester}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                        >
+                            <option value="">Not specified</option>
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                                <option key={n} value={n}>
+                                    Semester {n}
+                                </option>
+                            ))}
+                        </select>
+                        {touched.semester && errors.semester && (
+                            <span className="form-error">{errors.semester}</span>
+                        )}
+                    </div>
+
+                    <Input
+                        label="Branch / programme (optional)"
+                        name="branch"
+                        placeholder="e.g. Computer Science"
+                        icon={BookOpen}
+                        value={values.branch}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                    />
+
+                    <Input
+                        as="textarea"
+                        label="Bio (optional)"
+                        name="bio"
+                        placeholder="A short line about you"
+                        rows={3}
+                        value={values.bio}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
                     />
 
                     <div className="form-group">

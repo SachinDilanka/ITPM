@@ -75,6 +75,10 @@ h6 { font-size: 1rem; font-weight: 500; }
   min-height: 100vh;
 }
 
+.app-layout--no-sidebar .main-content {
+  margin-left: 0;
+}
+
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
@@ -845,6 +849,117 @@ select.form-input {
   border: 1px solid var(--border);
 }
 .note-card-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+
+/* Note ratings (browse / dashboard) */
+.note-rating-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.note-rating-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.note-rating-average {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  min-width: 2.25rem;
+}
+
+.note-rating-stars-readonly,
+.note-rating-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.note-star {
+  color: rgba(245, 158, 11, 0.35);
+}
+
+.note-star.filled {
+  color: #f59e0b;
+  fill: currentColor;
+}
+
+.note-rating-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.note-rate-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(245, 158, 11, 0.45);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.note-rate-btn.active {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.note-rate-btn:hover:not(:disabled) {
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.note-rate-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.note-rating-owner-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.note-rating-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.note-unrate-btn {
+  font-size: 0.72rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-sm);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger, #ef4444);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: 600;
+}
+
+.note-unrate-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+.note-unrate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* Rich-text highlight output (from execCommand hiliteColor) */
 mark {

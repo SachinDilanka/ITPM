@@ -22,5 +22,11 @@ export const validateRegisterForm = (values) => {
     if (!values.confirmPassword) errors.confirmPassword = 'Please confirm your password';
     else if (values.password !== values.confirmPassword)
         errors.confirmPassword = 'Passwords do not match';
+    const u = values.username?.trim();
+    if (u && u.length < 3) errors.username = 'Username must be at least 3 characters';
+    if (values.semester !== '' && values.semester != null) {
+        const s = Number(values.semester);
+        if (Number.isNaN(s) || s < 1 || s > 8) errors.semester = 'Semester must be 1–8';
+    }
     return errors;
 };

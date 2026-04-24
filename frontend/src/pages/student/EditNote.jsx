@@ -6,6 +6,7 @@ import useAuth from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { SUBJECTS, SEMESTERS, YEARS, PRIORITY_LEVELS } from '../../utils/constants';
+import RichTextEditorToolbar from '../../components/editor/RichTextEditorToolbar';
 import { getMediaUrl, formatDate } from '../../utils/helpers';
 import { getMyNoteByIdApi, updateMyNoteApi } from '../../api/notesApi';
 
@@ -116,7 +117,9 @@ const EditNote = () => {
             formData.append('subject', values.subject);
             formData.append('semester', values.semester);
             formData.append('year', values.year);
-            formData.append('description', values.description);
+            const el = editorRef.current;
+            const descriptionHtml = el ? el.innerHTML : values.description;
+            formData.append('description', descriptionHtml);
             formData.append('priorityLevel', values.priorityLevel);
             if (selectedFile) formData.append('file', selectedFile);
 
@@ -323,43 +326,7 @@ const EditNote = () => {
 
                     <div className="form-group">
                         <label className="form-label">Description (Optional)</label>
-                        {/* Rich text toolbar */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                            <select
-                                disabled={!canEdit}
-                                defaultValue="Arial"
-                                onChange={(e) => applyEditorCommand('fontName', e.target.value)}
-                                style={{
-                                    padding: '0.55rem 0.75rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    border: '1px solid var(--border)',
-                                    background: 'var(--bg-surface)',
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
-                                    fontSize: '0.875rem',
-                                    fontFamily: 'inherit',
-                                }}
-                            >
-                                <option value="Arial">Arial</option>
-                                <option value="Times New Roman">Times New Roman</option>
-                                <option value="Georgia">Georgia</option>
-                                <option value="Courier New">Courier New</option>
-                                <option value="Verdana">Verdana</option>
-                            </select>
-
-                            <Button type="button" variant="ghost" size="sm" disabled={!canEdit} onClick={() => applyEditorCommand('bold')}>
-                                Bold
-                            </Button>
-                            <Button type="button" variant="ghost" size="sm" disabled={!canEdit} onClick={() => applyEditorCommand('italic')}>
-                                Italic
-                            </Button>
-                            <Button type="button" variant="ghost" size="sm" disabled={!canEdit} onClick={() => applyEditorCommand('underline')}>
-                                Underline
-                            </Button>
-                            <Button type="button" variant="ghost" size="sm" disabled={!canEdit} onClick={() => applyEditorCommand('hiliteColor', 'yellow')}>
-                                Highlight
-                            </Button>
-                        </div>
+                        <RichTextEditorToolbar disabled={!canEdit} applyFormatting={applyEditorCommand} />
 
                         {/* Rich text editor */}
                         <div

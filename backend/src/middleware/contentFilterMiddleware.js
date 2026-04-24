@@ -1,4 +1,5 @@
 import { translate } from '@vitalets/google-translate-api';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Bad words list - translated English text වලට check කරනවා
 const BAD_WORDS = [
@@ -7,6 +8,12 @@ const BAD_WORDS = [
     'terrible', 'horrible', 'awful', 'worst', 'suck', 'crap', 'damn', 'hell',
     'bloody', 'rubbish', 'nonsense', 'bullshit', 'shit', 'fuck', 'ass', 'bitch',
     'bastard', 'retard', 'freak', 'weirdo', 'kill', 'die', 'death', 'destroy'
+];
+
+// Sinhala + transliterated abusive keywords (kept short and stem-based on purpose)
+const BAD_WORDS_SI = [
+    'මෝඩ', 'බූරු', 'ගොන්', 'පක', 'හුත්', 'වේසි', 'පලයන්',
+    'moda', 'gon', 'pakaya', 'hutto', 'wesi'
 ];
 
 // Check for excessive symbols/emojis
@@ -37,10 +44,26 @@ const hasExcessiveSymbolsOrEmojis = (text) => {
 };
 
 // Local bad word check function
+const normalizeForMatch = (text) => String(text || '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 const containsBadWords = (text) => {
-    const lowerText = text.toLowerCase();
+    const lowerText = normalizeForMatch(text);
     for (const word of BAD_WORDS) {
-        if (lowerText.includes(word.toLowerCase())) {
+        if (lowerText.includes(normalizeForMatch(word))) {
+            return { found: true, word };
+        }
+    }
+    return { found: false, word: null };
+};
+
+const containsBadWordsSinhala = (text) => {
+    const lowerText = normalizeForMatch(text);
+    for (const word of BAD_WORDS_SI) {
+        if (lowerText.includes(normalizeForMatch(word))) {
             return { found: true, word };
         }
     }
@@ -50,11 +73,58 @@ const containsBadWords = (text) => {
 // Free Google Translate (no API key needed)
 const translateToEnglish = async (text) => {
     try {
-        const result = await translate(text, { to: 'en' });
-        return result.text;
+        let result = await translate(text, { to: 'en' });
+        const autoText = String(result?.text || text).trim();
+        const hasSinhalaChars = /[\u0D80-\u0DFF]/u.test(String(text));
+
+        // If auto detection fails for Sinhala, force source language as 'si'.
+        if (hasSinhalaChars && autoText.toLowerCase() === String(text).trim().toLowerCase()) {
+            try {
+                const forced = await translate(text, { from: 'si', to: 'en' });
+                if (forced?.text) {
+                    result = forced;
+                }
+            } catch {
+                // Ignore and keep auto-detected result.
+            }
+        }
+
+        return {
+            translatedText: result?.text || text,
+            detectedLanguage: result?.from?.language?.iso || 'auto'
+        };
     } catch (error) {
         console.log('Translation failed:', error.message);
-        return text; // Original text return කරනවා
+        return {
+            translatedText: text,
+            detectedLanguage: 'unknown'
+        }; // Original text return කරනවා
+    }
+};
+
+const checkHarmfulWithGemini = async (genAI, text) => {
+    try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = `You are a moderation classifier.\n` +
+            `Return ONLY JSON with this shape: {"isInappropriate": boolean, "reason": string}.\n` +
+            `Classify whether the text contains harassment, hate, abuse, threats, or explicit profanity.\n` +
+            `Text: "${String(text).replace(/"/g, '\\"')}"`;
+
+        const result = await model.generateContent(prompt);
+        const raw = (await result.response.text()).trim();
+        const jsonStart = raw.indexOf('{');
+        const jsonEnd = raw.lastIndexOf('}');
+        if (jsonStart === -1 || jsonEnd === -1) {
+            return null;
+        }
+        const parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
+        return {
+            isInappropriate: Boolean(parsed?.isInappropriate),
+            reason: parsed?.reason || ''
+        };
+    } catch (error) {
+        console.log('Gemini moderation skipped:', error.message);
+        return null;
     }
 };
 
@@ -67,8 +137,9 @@ export const checkInappropriateContent = async (req, res, next) => {
         }
 
         // Step 1: Translate to English (free - no API key needed)
-        const translatedComment = await translateToEnglish(comment);
-        const isAlreadyEnglish = translatedComment.trim().toLowerCase() === comment.trim().toLowerCase();
+        const { translatedText, detectedLanguage } = await translateToEnglish(comment);
+        const translatedComment = String(translatedText || comment).trim();
+        const isAlreadyEnglish = String(detectedLanguage).toLowerCase() === 'en';
 
         console.log(`🌐 Original: "${comment}" → English: "${translatedComment}"`);
 
@@ -82,7 +153,16 @@ export const checkInappropriateContent = async (req, res, next) => {
             });
         }
 
-        // Step 3: Local bad word check on ENGLISH text
+        // Step 3: Local bad word checks on BOTH original and translated text
+        const localSinhalaCheck = containsBadWordsSinhala(comment);
+        if (localSinhalaCheck.found) {
+            return res.status(400).json({
+                success: false,
+                message: '🚫 Your comment is harmful. Please write a respectful comment.',
+                reason: 'Contains inappropriate language'
+            });
+        }
+
         const localCheck = containsBadWords(translatedComment);
         if (localCheck.found) {
             return res.status(400).json({

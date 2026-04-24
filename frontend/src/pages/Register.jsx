@@ -16,8 +16,12 @@ export default function Register() {
     setError('');
     setSubmitting(true);
     try {
-      await register(name, email, password);
-      navigate('/profile', { replace: true });
+      const result = await register(name, email, password);
+      if (result?.success) {
+        navigate('/profile', { replace: true });
+      } else {
+        setError(result?.error || 'Could not sign up');
+      }
     } catch (err) {
       setError(err.message || 'Could not sign up');
     } finally {

@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Relative `/api` uses the Vite dev proxy (vite.config.js → backend PORT). Set VITE_API_URL for production.
+const base = (import.meta.env.VITE_API_URL || '').trim();
+const baseURL = base || '/api';
+
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -18,12 +22,18 @@ axiosInstance.interceptors.request.use(
                 delete config.headers['Content-Type'];
             }
         }
+        let bearer = null;
         const userInfo = localStorage.getItem('userInfo');
         if (userInfo) {
-            const { token } = JSON.parse(userInfo);
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
+            try {
+                bearer = JSON.parse(userInfo).token;
+            } catch {
+                /* ignore */
             }
+        }
+        if (!bearer) bearer = localStorage.getItem('token');
+        if (bearer) {
+            config.headers.Authorization = `Bearer ${bearer}`;
         }
         return config;
     },
@@ -36,6 +46,7 @@ axiosInstance.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             localStorage.removeItem('userInfo');
+            localStorage.removeItem('token');
             window.location.href = '/login';
         }
         return Promise.reject(error);

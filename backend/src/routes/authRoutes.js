@@ -1,16 +1,29 @@
-const express = require('express');
+import express from 'express';
+import {
+    registerUser,
+    loginUser,
+    getMe,
+    updateProfile,
+    uploadProfileAvatar,
+    getProfileSummary,
+    deleteAccount,
+} from '../controllers/authController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import uploadMiddleware from '../middleware/uploadMiddleware.js';
+
 const router = express.Router();
-const { registerUser, loginUser, updateAvatar } = require('../controllers/authController');
-const { protect } = require('../middleware/authMiddleware');
-const uploadMiddleware = require('../middleware/uploadMiddleware');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.get('/me', protect, getMe);
+router.get('/profile/summary', protect, getProfileSummary);
+router.put('/profile', protect, updateProfile);
+router.delete('/account', protect, deleteAccount);
 router.post(
     '/profile/avatar',
     protect,
     uploadMiddleware.uploadAvatar.single('avatar'),
-    updateAvatar
+    uploadProfileAvatar
 );
 
-module.exports = router;
+export default router;

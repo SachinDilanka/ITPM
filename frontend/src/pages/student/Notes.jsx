@@ -1,18 +1,38 @@
-import { useState, useCallback } from 'react';
-import { Search, Filter, BookOpen } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { Search, BookOpen } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { filterNotesApi } from '../../api/notesApi';
+import useAuth from '../../hooks/useAuth';
+import { useNoteRatings } from '../../hooks/useNoteRatings';
 import NoteCard from '../../components/cards/NoteCard';
 import Spinner from '../../components/ui/Spinner';
 import Button from '../../components/ui/Button';
 import { SUBJECTS, SEMESTERS, YEARS } from '../../utils/constants';
+import { getUserMongoId } from '../../utils/helpers';
 
 const Notes = () => {
+    const { user } = useAuth();
     const [filters, setFilters] = useState({ subject: '', semester: '', year: '', status: 'approved' });
 
     const fetchFn = useCallback(() => filterNotesApi(filters), [filters]);
     const { data, loading, error, execute } = useFetch(fetchFn);
-    const notes = data?.notes || data || [];
+    const notes = useMemo(() => data?.notes || data || [], [data]);
+    const { ratingsByNoteId, handleRateNote, ratingLoadingNoteId } = useNoteRatings(notes);
+    const sortedNotes = useMemo(() => {
+        const list = [...notes];
+        list.sort((a, b) => {
+            const ra = Number(ratingsByNoteId[a._id]?.averageRating || 0);
+            const rb = Number(ratingsByNoteId[b._id]?.averageRating || 0);
+            if (rb !== ra) return rb - ra;
+
+            const ta = ratingsByNoteId[a._id]?.totalRatings || 0;
+            const tb = ratingsByNoteId[b._id]?.totalRatings || 0;
+            if (tb !== ta) return tb - ta;
+
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+        return list;
+    }, [notes, ratingsByNoteId]);
 
     const handleFilterChange = (e) => {
         setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -65,7 +85,7 @@ const Notes = () => {
                 <Spinner message="Searching notes..." />
             ) : error ? (
                 <div className="alert alert-error">{error}</div>
-            ) : notes.length === 0 ? (
+            ) : sortedNotes.length === 0 ? (
                 <div className="empty-state">
                     <BookOpen size={48} className="empty-state-icon" />
                     <h3>No notes found</h3>
@@ -74,11 +94,18 @@ const Notes = () => {
             ) : (
                 <>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                        Found <strong style={{ color: 'var(--text-primary)' }}>{notes.length}</strong> notes
+                        Found <strong style={{ color: 'var(--text-primary)' }}>{sortedNotes.length}</strong> notes (sorted by rating: high to low)
                     </p>
                     <div className="grid-3">
-                        {notes.map((note) => (
-                            <NoteCard key={note._id} note={note} />
+                        {sortedNotes.map((note) => (
+                            <NoteCard
+                                key={note._id}
+                                note={note}
+                                currentUserId={getUserMongoId(user)}
+                                ratingSummary={ratingsByNoteId[note._id]}
+                                onRate={handleRateNote}
+                                ratingBusy={ratingLoadingNoteId === note._id}
+                            />
                         ))}
                     </div>
                 </>

@@ -13,18 +13,28 @@ const ManageNotes = () => {
     const [actionLoading, setActionLoading] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Pre-fill search from URL param (e.g. from Navbar search)
+    // Pre-fill search / tab from URL (e.g. Navbar ?q= or return from note detail ?status=approved)
     useEffect(() => {
         const q = searchParams.get('q');
         if (q) {
             setSearchQuery(q);
-            setFilter('approved'); // switch to approved to show all searchable notes
+            setFilter('approved');
+        }
+        const statusParam = searchParams.get('status');
+        if (statusParam === 'pending' || statusParam === 'approved' || statusParam === 'rejected') {
+            setFilter(statusParam);
         }
     }, [searchParams]);
 
     const fetchNotes = useCallback(() => filterNotesApi({ status: filter }), [filter]);
-    const { data, loading, error, execute } = useFetch(fetchNotes);
-    const notes = data?.notes || data || [];
+    const { data, loading, error, execute } = useFetch(fetchNotes, false);
+    const raw = data?.notes ?? data;
+    const notes = Array.isArray(raw) ? raw : [];
+
+    // Refetch when tab changes — initial useFetch only runs once with default filter, so Approved/Rejected would stay empty otherwise.
+    useEffect(() => {
+        execute();
+    }, [filter, execute]);
 
     // Filter notes by search query (title, subject, or uploader name)
     const filteredNotes = notes.filter((note) => {
@@ -122,6 +132,7 @@ const ManageNotes = () => {
                         <NoteCard
                             key={note._id}
                             note={note}
+                            detailBasePath="/admin/notes"
                             showActions={filter === 'pending'}
                             onApprove={filter === 'pending' ? (id) => handleAction('approve', id) : null}
                             onReject={filter === 'pending' ? (id) => handleAction('reject', id) : null}

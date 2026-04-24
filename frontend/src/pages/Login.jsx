@@ -15,8 +15,12 @@ export default function Login() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate('/profile', { replace: true });
+      const result = await login(email, password);
+      if (result?.success) {
+        navigate('/profile', { replace: true });
+      } else {
+        setError(result?.error || 'Could not log in');
+      }
     } catch (err) {
       setError(err.message || 'Could not log in');
     } finally {

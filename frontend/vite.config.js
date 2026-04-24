@@ -3,19 +3,28 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.js',
+  },
+  build: {
+    outDir: 'build',
+  },
   server: {
     port: 5173,
     // If 5173 is busy, Vite picks the next free port — watch the terminal for the real URL.
     strictPort: false,
     open: true,
     host: true,
+    // Must match backend listen port (backend/server.js: process.env.PORT || 5000).
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5022',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://127.0.0.1:5022',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },
     },

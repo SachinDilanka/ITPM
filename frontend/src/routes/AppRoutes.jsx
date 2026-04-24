@@ -1,14 +1,11 @@
-import { useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+import SimpleFooter from '../components/layout/SimpleFooter';
 
 // Protected route wrapper – requires authentication + role
 export const ProtectedRoute = ({ requiredRole }) => {
     const { user } = useAuth();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     if (!user) return <Navigate to="/login" replace />;
 
@@ -22,12 +19,11 @@ export const ProtectedRoute = ({ requiredRole }) => {
     }
 
     return (
-        <div className={`app-layout${sidebarOpen ? '' : ' sidebar-collapsed'}`}>
-            <Sidebar isOpen={sidebarOpen} />
+        <div className="app-layout app-layout--no-sidebar">
             <div className="main-content">
-                <Navbar onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
+                <Navbar />
                 <Outlet />
-                <Footer />
+                <SimpleFooter />
             </div>
         </div>
     );

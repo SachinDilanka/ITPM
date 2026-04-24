@@ -86,9 +86,24 @@ const updateNotePriority = async (req, res) => {
 
 const getReportedNotes = async (req, res) => {
     const reports = await Report.find()
-        .populate('noteId', 'title subject reportsCount')
+        .sort({ createdAt: -1 })
+        .populate({
+            path: 'noteId',
+            select: 'title subject semester year reportsCount status uploadedBy createdAt',
+            populate: { path: 'uploadedBy', select: 'name email' },
+        })
         .populate('reportedBy', 'name email');
     res.json(reports);
+};
+
+/** Full note for moderation (pending, approved, or rejected). */
+const getAdminNoteById = async (req, res) => {
+    const note = await Note.findById(req.params.id).populate('uploadedBy', 'name email');
+    if (!note) {
+        res.status(404);
+        throw new Error('Note not found');
+    }
+    res.json({ note });
 };
 
 module.exports = {
@@ -102,4 +117,5 @@ module.exports = {
     rejectNote,
     updateNotePriority,
     getReportedNotes,
+    getAdminNoteById,
 };
